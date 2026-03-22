@@ -5,12 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shadab Page Editor</title>
 
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<!-- Fonts — loaded from main/fonts/ folder -->
+<style>
+/* ── EB Garamond ── */
+@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:400; src:url('main/fonts/EBGaramond-Regular.ttf') format('truetype'),url('main/fonts/EBGaramond-Regular.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:italic; font-weight:400; src:url('main/fonts/EBGaramond-Italic.ttf') format('truetype'),url('main/fonts/EBGaramond-Italic.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:500; src:url('main/fonts/EBGaramond-Medium.ttf') format('truetype'),url('main/fonts/EBGaramond-Medium.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:600; src:url('main/fonts/EBGaramond-SemiBold.ttf') format('truetype'),url('main/fonts/EBGaramond-SemiBold.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:700; src:url('main/fonts/EBGaramond-Bold.ttf') format('truetype'),url('main/fonts/EBGaramond-Bold.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:italic; font-weight:700; src:url('main/fonts/EBGaramond-BoldItalic.ttf') format('truetype'),url('main/fonts/EBGaramond-BoldItalic.woff2') format('woff2'); }
+/* ── JetBrains Mono ── */
+@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:400; src:url('main/fonts/JetBrainsMono-Regular.ttf') format('truetype'),url('main/fonts/JetBrainsMono-Regular.woff2') format('woff2'); }
+@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:500; src:url('main/fonts/JetBrainsMono-Medium.ttf') format('truetype'),url('main/fonts/JetBrainsMono-Medium.woff2') format('woff2'); }
+/* ── Nunito Sans ── */
+@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:300; src:url('main/fonts/NunitoSans-Light.ttf') format('truetype'),url('main/fonts/NunitoSans-Light.woff2') format('woff2'); }
+@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:400; src:url('main/fonts/NunitoSans-Regular.ttf') format('truetype'),url('main/fonts/NunitoSans-Regular.woff2') format('woff2'); }
+@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:600; src:url('main/fonts/NunitoSans-SemiBold.ttf') format('truetype'),url('main/fonts/NunitoSans-SemiBold.woff2') format('woff2'); }
+@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:700; src:url('main/fonts/NunitoSans-Bold.ttf') format('truetype'),url('main/fonts/NunitoSans-Bold.woff2') format('woff2'); }
+/* ── Jameel Noori Nastaliq (Urdu) ── */
+@font-face { font-family:'JameelNooriNastaliq'; font-style:normal; font-weight:400; src:url('main/fonts/JameelNooriNastaleeq.ttf') format('truetype'),url('main/fonts/JameelNooriNastaliq.ttf') format('truetype'),url('main/fonts/Jameel-Noori-Nastaleeq.ttf') format('truetype'); }
+</style>
+<!-- Jameel Noori CDN fallback if local file is absent -->
 <link href="https://cdn.jsdelivr.net/npm/jameel-noori@1.1.2/jameel-noori.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <!-- MathJax (LaTeX rendering) -->
 <script>
   window.MathJax = {
@@ -45,7 +61,7 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 .win-btn.close{background:#ff5f57;} .win-btn.min{background:#febc2e;} .win-btn.max{background:#28c840;}
 
 /* ── MENU BAR ── */
-.menu-bar { height:28px; background:var(--tb); border-bottom:1px solid var(--tb-border); display:flex; align-items:stretch; padding:0 4px; position:relative; user-select:none; }
+.menu-bar { height:28px; background:var(--tb); border-bottom:1px solid var(--tb-border); display:flex; align-items:center; padding:0 4px; position:relative; user-select:none; overflow-x:auto; overflow-y:visible; }
 .menu-item { padding:0 10px; font-size:12.5px; display:flex; align-items:center; cursor:pointer; border-radius:3px; position:relative; color:#333; transition:background .1s; }
 .menu-item:hover,.menu-item.open { background:var(--hover); }
 .dropdown { display:none; position:absolute; top:100%; left:0; background:#fff; border:1px solid #ccc; border-radius:4px; box-shadow:0 4px 14px rgba(0,0,0,.14); min-width:170px; z-index:999; padding:4px 0; }
@@ -66,13 +82,12 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 .fsize { width:42px; height:26px; border:1px solid var(--input); border-radius:3px; text-align:center; font-size:12px; padding:0 4px; outline:none; font-family:'Nunito Sans',sans-serif; }
 .fsize:focus{border-color:var(--accent);}
 
-/* ── SMART FORMAT RIBBON ── */
-.smart-ribbon { background:var(--tb); border-bottom:1px solid var(--tb-border); padding:3px 8px; display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-.sm-label { font-size:11px; font-weight:700; color:#666; letter-spacing:.3px; text-transform:uppercase; }
-.sm { height:24px; padding:0 9px; border:1px solid var(--input); background:#fff; border-radius:3px; cursor:pointer; font-size:12px; font-family:'Nunito Sans',sans-serif; color:#333; font-weight:600; display:flex; align-items:center; gap:4px; transition:background .12s; white-space:nowrap; }
-.sm:hover{background:var(--hover);border-color:#aaa;} .sm:active{background:var(--active);}
-.smsep { width:1px; height:18px; background:#d0d0d0; margin:0 2px; }
-.sm-hint { font-size:11px; color:#aaa; font-style:italic; }
+/* ── SMART FORMAT — menu bar buttons ── */
+.mf-sep { width:1px; height:18px; background:#c0c0c0; margin:0 3px; align-self:center; }
+.mf-btn { height:22px; padding:0 8px; border:1px solid var(--input); background:#fff; border-radius:3px; cursor:pointer; font-size:11.5px; font-family:'Nunito Sans',sans-serif; color:#333; font-weight:600; display:flex; align-items:center; gap:3px; transition:background .12s; white-space:nowrap; }
+.mf-btn:hover{background:var(--hover);border-color:#aaa;} .mf-btn:active{background:var(--active);}
+.mf-btn.reset-btn{color:#7a4a20;border-color:#c8a87a;background:#fff8f0;}
+.mf-btn.reset-btn:hover{background:#ffeedd;}
 
 /* ── RULER ── */
 .ruler { height:20px; background:#f8f8f8; border-bottom:1px solid #ddd; overflow:hidden; }
@@ -286,6 +301,15 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
       <div class="dropdown-item" onclick="setZoom(150)">Zoom 150%</div>
     </div>
   </div>
+  <!-- Smart Format inline buttons -->
+  <div class="mf-sep"></div>
+  <button class="mf-btn" onclick="transformAsterisks('bold')" title="Bold lines starting with *"><b>*B</b>&nbsp;Bold *</button>
+  <button class="mf-btn" onclick="transformAsterisks('serial')" title="Add serial numbers to lines starting with *">#&nbsp;Serial *</button>
+  <button class="mf-btn" onclick="transformAsterisks('both')" title="Bold + serial on lines starting with *"><b>#B</b>&nbsp;Both *</button>
+  <div class="mf-sep"></div>
+  <button class="mf-btn" onclick="transformNumbers('bold')" title="Bold text after numbered lines (1. Question)"><b>1.</b>&nbsp;Bold Nums</button>
+  <div class="mf-sep"></div>
+  <button class="mf-btn reset-btn" onclick="transformAsterisks('reset')" title="Remove * markers">✕&nbsp;Remove *</button>
 </div>
 
 <!-- MAIN RIBBON -->
@@ -377,17 +401,8 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   </div>
 </div>
 
-<!-- SMART FORMAT RIBBON -->
-<div class="smart-ribbon">
-  <span class="sm-label">Smart Format</span>
-  <div class="smsep"></div>
-  <button class="sm" onclick="transformAsterisks('bold')"><b>B</b> Bold Questions</button>
-  <button class="sm" onclick="transformAsterisks('serial')"># Add Serial No.</button>
-  <button class="sm" onclick="transformAsterisks('both')"><b>#B</b> Bold + Serial No.</button>
-  <div class="smsep"></div>
-  <button class="sm" onclick="transformAsterisks('reset')" style="color:#7a4a20;border-color:#c8a87a;background:#fff8f0;">✕ Remove *</button>
-  <span class="sm-hint">Select text first, or leave unselected to process all content</span>
-</div>
+
+
 </div><!-- /toolbar-area -->
 
 <!-- MAIN AREA -->
@@ -1148,7 +1163,55 @@ function transformAsterisks(mode) {
 }
 
 // ═══════════════════════════════════════
-// SAVE AS PDF
+// SMART FORMAT  (numbers → bold)
+// Detects lines in format:  1. Question text
+// Bolds the entire line keeping the number prefix
+// ═══════════════════════════════════════
+function transformNumbers(mode) {
+  const sel = window.getSelection();
+  let hasSel = false, range = null, selArea = null;
+
+  if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+    const r = sel.getRangeAt(0);
+    document.querySelectorAll('.columns-area').forEach(a => {
+      if (!selArea && a.contains(r.commonAncestorContainer)) { hasSel = true; range = r.cloneRange(); selArea = a; }
+    });
+  }
+
+  const numRegex = /^(\d+[\.\)]\s*)(.*)$/;
+
+  function buildHtml(text) {
+    return text.split('\n').map(line => {
+      const t = line.trim();
+      const m = t.match(numRegex);
+      if (m) {
+        // m[1] = "1. ", m[2] = "Question text"
+        const prefix = escHtml(m[1]);
+        const rest   = escHtml(m[2]);
+        return `<div><b>${prefix}${rest}</b></div>`;
+      }
+      return `<div>${escHtml(line)||'<br>'}</div>`;
+    }).join('');
+  }
+
+  if (hasSel) {
+    const text = sel.toString();
+    if (!text.trim()) { alert('No content found.'); return; }
+    if (!text.split('\n').some(l => numRegex.test(l.trim()))) { alert('No numbered lines (e.g. 1. Question) found in selection.'); return; }
+    selArea.focus(); sel.removeAllRanges(); sel.addRange(range);
+    document.execCommand('insertHTML', false, buildHtml(text));
+  } else {
+    const allAreas = [...document.querySelectorAll('.columns-area')];
+    const text = allAreas.map(a => a.innerText).join('\n').replace(/\n{3,}/g, '\n\n');
+    if (!text.trim()) { alert('No content found.'); return; }
+    if (!text.split('\n').some(l => numRegex.test(l.trim()))) { alert('No numbered lines (e.g. 1. Question) found.'); return; }
+    document.querySelectorAll('.page-cont').forEach(p => p.remove());
+    document.getElementById('columnsArea').innerHTML = buildHtml(text);
+  }
+
+  updateCounts();
+  setTimeout(reflowPages, 200);
+}
 //
 // Renders the document into a hidden off-screen iframe inside the current
 // page, waits for fonts + MathJax SVGs to settle, then calls
@@ -1318,17 +1381,7 @@ async function savePDF() {
     await new Promise(r => setTimeout(r, 600));
 
     // ── 7. Print from the iframe — triggers native share sheet on Android
-    const win = iframe.contentWindow;
-    const doc = win.document;
-    html2pdf()
-      .set({
-        margin: 0,
-        filename: "Shadab_Document.pdf",
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-      })
-      .from(doc.body)
-      .save();
+    iframe.contentWindow.print();
 
   } finally {
     // Remove iframe after a short delay so the print job can initiate
