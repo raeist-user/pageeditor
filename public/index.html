@@ -1320,15 +1320,15 @@ async function savePDF() {
     // ── 7. Print from the iframe — triggers native share sheet on Android
     const win = iframe.contentWindow;
     const doc = win.document;
-
-    const blob = new Blob([doc.documentElement.outerHTML], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = "Shadab_Document.html"; // temp fallback
-    a.click();
-    URL.revokeObjectURL(url);
+    html2pdf()
+      .set({
+        margin: 0,
+        filename: "Shadab_Document.pdf",
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      })
+      .from(doc.body)
+      .save();
 
   } finally {
     // Remove iframe after a short delay so the print job can initiate
