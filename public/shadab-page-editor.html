@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Shadab Page Editor</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Nunito+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/jameel-noori@1.1.2/jameel-noori.min.css" rel="stylesheet">
+<!-- MathJax (LaTeX rendering) -->
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: { fontCache: 'global' },
+    startup: { typeset: false }
+  };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<!-- DOCX export -->
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+
+
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --bg:#e8e8e8; --tb:#f3f3f3; --tb-border:#d0d0d0;
+  --hover:#e0e0e0; --active:#c8d8f0;
+  --page:#ffffff; --shadow:0 2px 12px rgba(0,0,0,.18);
+  --accent:#2563a8; --text:#1a1a1a; --input:#ccc;
+}
+html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; }
+
+/* ── TITLE BAR ── */
+.title-bar { height:32px; background:#2b2b2b; display:flex; align-items:center; justify-content:space-between; padding:0 12px; color:#ccc; font-size:12px; user-select:none; }
+.app-name { color:#fff; font-weight:600; }
+.win-btns { display:flex; gap:6px; }
+.win-btn { width:12px; height:12px; border-radius:50%; border:none; cursor:pointer; }
+.win-btn.close{background:#ff5f57;} .win-btn.min{background:#febc2e;} .win-btn.max{background:#28c840;}
+
+/* ── MENU BAR ── */
+.menu-bar { height:28px; background:var(--tb); border-bottom:1px solid var(--tb-border); display:flex; align-items:stretch; padding:0 4px; position:relative; user-select:none; }
+.menu-item { padding:0 10px; font-size:12.5px; display:flex; align-items:center; cursor:pointer; border-radius:3px; position:relative; color:#333; transition:background .1s; }
+.menu-item:hover,.menu-item.open { background:var(--hover); }
+.dropdown { display:none; position:absolute; top:100%; left:0; background:#fff; border:1px solid #ccc; border-radius:4px; box-shadow:0 4px 14px rgba(0,0,0,.14); min-width:170px; z-index:999; padding:4px 0; }
+.menu-item.open .dropdown { display:block; }
+.dropdown-item { padding:5px 14px; font-size:12.5px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; justify-content:space-between; gap:20px; color:#222; }
+.dropdown-item:hover { background:#e8f0fb; color:var(--accent); }
+.dropdown-item .sc { color:#aaa; font-size:11px; }
+.dd-sep { height:1px; background:#e8e8e8; margin:4px 0; }
+
+/* ── RIBBON ── */
+.ribbon { background:var(--tb); border-bottom:1px solid var(--tb-border); padding:4px 8px; display:flex; align-items:center; flex-wrap:wrap; gap:2px; }
+.rsep { width:1px; height:22px; background:#d0d0d0; margin:0 4px; }
+.rb { height:26px; padding:0 7px; border:none; background:transparent; border-radius:3px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:4px; color:#333; font-family:'Nunito Sans',sans-serif; transition:background .12s; white-space:nowrap; }
+.rb:hover{background:var(--hover);} .rb:active,.rb.on{background:var(--active);}
+.rb svg{width:14px;height:14px;flex-shrink:0;}
+.rb-sel { height:26px; border:1px solid var(--input); border-radius:3px; background:#fff; font-size:12px; padding:0 6px; cursor:pointer; color:#333; font-family:'Nunito Sans',sans-serif; outline:none; }
+.rb-sel:focus{border-color:var(--accent);}
+.fsize { width:42px; height:26px; border:1px solid var(--input); border-radius:3px; text-align:center; font-size:12px; padding:0 4px; outline:none; font-family:'Nunito Sans',sans-serif; }
+.fsize:focus{border-color:var(--accent);}
+
+/* ── SMART FORMAT RIBBON ── */
+.smart-ribbon { background:var(--tb); border-bottom:1px solid var(--tb-border); padding:3px 8px; display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+.sm-label { font-size:11px; font-weight:700; color:#666; letter-spacing:.3px; text-transform:uppercase; }
+.sm { height:24px; padding:0 9px; border:1px solid var(--input); background:#fff; border-radius:3px; cursor:pointer; font-size:12px; font-family:'Nunito Sans',sans-serif; color:#333; font-weight:600; display:flex; align-items:center; gap:4px; transition:background .12s; white-space:nowrap; }
+.sm:hover{background:var(--hover);border-color:#aaa;} .sm:active{background:var(--active);}
+.smsep { width:1px; height:18px; background:#d0d0d0; margin:0 2px; }
+.sm-hint { font-size:11px; color:#aaa; font-style:italic; }
+
+/* ── RULER ── */
+.ruler { height:20px; background:#f8f8f8; border-bottom:1px solid #ddd; overflow:hidden; }
+.ruler canvas { display:block; width:100%; height:100%; }
+
+/* ── LAYOUT ── */
+.app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+.toolbar-area { flex-shrink:0; }
+.main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.editor-scroll { flex:1; overflow:auto; background:var(--bg); position:relative; }
+.editor-scroll::-webkit-scrollbar{width:8px;height:8px;}
+.editor-scroll::-webkit-scrollbar-track{background:#d8d8d8;}
+.editor-scroll::-webkit-scrollbar-thumb{background:#aaa;border-radius:4px;}
+
+/* ── ZOOM CONTAINERS ── */
+/* zoom-outer fills the scroll area and is sized by JS to the true scaled dimensions */
+.zoom-outer {
+  position: relative;
+  /* width & height set by JS */
+}
+/* zoom-wrapper is absolutely placed inside outer, scaled from top-left */
+.zoom-wrapper {
+  position: absolute;
+  top: 0; left: 0;
+  display: flex;
+  flex-direction: column;   /* pages stack top → bottom */
+  align-items: center;
+  padding: 24px 40px 48px;
+  gap: 0;
+  transform-origin: top left;
+  will-change: transform;
+}
+
+/* ── PAGE (exact A4 297×210mm) ── */
+.page { width:210mm; height:297mm; background:var(--page); box-shadow:var(--shadow); padding:0.1in; position:relative; font-family:'EB Garamond',Georgia,serif; font-size:11pt; line-height:1.5; color:#111; overflow:hidden; flex-shrink:0; }
+
+/* Page 1 header */
+.page-header { text-align:center; margin-bottom:4px; }
+.headline { font-family:'EB Garamond',serif; font-size:15pt; font-weight:700; letter-spacing:.5px; color:#111; line-height:1.15; margin-bottom:3px; }
+.info-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px; font-family:'Nunito Sans',sans-serif; font-size:9.5pt; }
+.info-left,.info-right { display:flex; flex-direction:column; gap:4px; }
+.info-field { display:flex; align-items:center; gap:6px; }
+.info-field label { font-weight:700; color:#222; min-width:48px; font-size:9pt; }
+.info-input { border:none; border-bottom:1.5px solid #555; outline:none; font-family:'EB Garamond',serif; font-size:10pt; color:#111; background:transparent; width:120px; padding:1px 2px; transition:border-color .2s; }
+.info-input:focus{border-bottom-color:var(--accent);}
+.info-input.short{width:70px;}
+.page-divider { border:none; border-top:2px solid #222; margin:6px 0 8px; }
+.page-divider.thin { border-top-width:1px; border-top-color:#999; margin:3px 0 8px; }
+
+/* Continuation page label */
+.cont-label { font-size:10pt; font-family:'EB Garamond',serif; color:#888; text-align:center; margin-bottom:6px; font-style:italic; }
+
+/* ── 3-COLUMN CONTENT AREA ── */
+.columns-area {
+  column-count:3; column-gap:14px; column-rule:1px solid #ccc; column-fill:auto;
+  overflow:hidden; outline:none;
+  font-family:'EB Garamond',serif; font-size:10.5pt; line-height:1.65; color:#111;
+  word-break:break-word; text-align:justify;
+  /* height set by JS */
+}
+.columns-area:empty::before { content:'Start typing or paste questions here…'; color:#bbb; font-style:italic; pointer-events:none; }
+.columns-area:focus { caret-color:var(--accent); }
+.columns-area div,.columns-area p { margin:0; min-height:1lh; break-inside:avoid; }
+
+/* RTL Urdu mode */
+.columns-area.urdu-mode {
+  direction:rtl; text-align:right;
+  font-family:JameelNooriNastaliq,'Nastaliq',serif;
+  font-size:20px; line-height:2.4;
+}
+.urdu-mode div,.urdu-mode p { direction:rtl; unicode-bidi:embed; }
+
+/* ── MARGIN PANEL ── */
+.margin-panel {
+  display: none; position: fixed;
+  background: #fff; border: 1px solid #ccc; border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.18);
+  padding: 12px 16px 14px; z-index: 9999; width: 220px;
+  font-family: 'Nunito Sans', sans-serif; font-size: 12px;
+}
+.margin-panel.open { display: block; }
+.margin-panel h4 { font-size: 12px; font-weight: 700; color: #333; margin-bottom: 10px; }
+.mp-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.mp-row label { color: #555; font-size: 11px; min-width: 52px; }
+.mp-row input[type=range] { flex:1; margin: 0 8px; accent-color: var(--accent); }
+.mp-row .mp-val { font-size: 11px; color: #888; min-width: 32px; text-align: right; }
+.mp-wrap { position: relative; }
+.mp-apply { margin-top: 10px; width: 100%; height: 26px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-family: 'Nunito Sans', sans-serif; font-weight: 600; }
+.mp-apply:hover { background: #1a4e96; }
+.mp-presets { display: flex; gap: 6px; margin-bottom: 10px; }
+.mp-preset { flex:1; height:22px; font-size:10px; border:1px solid #bbb; background:#f6f6f6; border-radius:3px; cursor:pointer; font-family:'Nunito Sans',sans-serif; }
+.mp-preset:hover { background:#e8f0fb; border-color:var(--accent); color:var(--accent); }
+.latex-src { display:none; }
+
+/* ── STATUS BAR ── */
+.status-bar { height:22px; background:#f0f0f0; border-top:1px solid #d0d0d0; display:flex; align-items:center; padding:0 12px; gap:18px; font-size:11px; color:#666; font-family:'Nunito Sans',sans-serif; flex-shrink:0; }
+.status-right { margin-left:auto; display:flex; gap:14px; align-items:center; }
+.zoom-ctrl { display:flex; align-items:center; gap:5px; }
+.zoom-slider { width:70px; accent-color:var(--accent); }
+
+/* ── PAGE NAVIGATOR ── */
+.page-nav {
+  height: 36px;
+  background: #2a2a2a;
+  border-top: 1px solid #111;
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  overflow-x: auto;
+}
+.page-nav::-webkit-scrollbar { height: 3px; }
+.page-nav::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+.pg-btn {
+  min-width: 28px; height: 24px;
+  border: 1.5px solid #555;
+  background: #3a3a3a;
+  color: #ccc;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Nunito Sans', sans-serif;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: background .12s, border-color .12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pg-btn:hover { background: #505050; border-color: #888; color: #fff; }
+.pg-btn.active { background: var(--accent); border-color: #4a8fe0; color: #fff; }
+.pg-nav-arrow {
+  width: 24px; height: 24px;
+  background: transparent; border: none;
+  color: #aaa; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border-radius: 3px;
+  transition: color .12s;
+}
+.pg-nav-arrow:hover { color: #fff; }
+
+/* ── PRINT ── */
+@media print {
+  .title-bar,.menu-bar,.ribbon,.smart-ribbon,.ruler,.status-bar,.page-nav{display:none!important;}
+  .editor-scroll{overflow:visible!important;background:none;}
+  .zoom-outer,.zoom-wrapper{position:static!important;transform:none!important;width:auto!important;height:auto!important;padding:0!important;gap:0!important;}
+  .page{box-shadow:none!important;overflow:visible!important;page-break-after:always;break-after:page;height:297mm!important;width:210mm!important;margin:0!important;}
+  .columns-area{overflow:visible!important;height:auto!important;}
+  body,html{overflow:visible!important;height:auto!important;}
+  .app,.main-area{height:auto!important;overflow:visible!important;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TITLE BAR -->
+<div class="title-bar">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span>📄</span><span class="app-name">PageEditor</span>
+    <span style="margin-left:8px;opacity:.5;">— Shadab Coaching Centre</span>
+  </div>
+  <div class="win-btns">
+    <button class="win-btn min"></button><button class="win-btn max"></button><button class="win-btn close"></button>
+  </div>
+</div>
+
+<div class="toolbar-area">
+<!-- MENU BAR -->
+<div class="menu-bar" id="menuBar">
+  <div class="menu-item">File
+    <div class="dropdown">
+      <div class="dropdown-item" onclick="savePDF()">Save as PDF <span class="sc">Ctrl+P</span></div>
+      <div class="dd-sep"></div>
+      <div class="dropdown-item" onclick="saveDocx()">Save as DOCX</div>
+      <div class="dd-sep"></div>
+      <div class="dropdown-item" onclick="clearAll()">New / Clear</div>
+    </div>
+  </div>
+  <div class="menu-item">Edit
+    <div class="dropdown">
+      <div class="dropdown-item" onclick="document.execCommand('undo')">Undo <span class="sc">Ctrl+Z</span></div>
+      <div class="dropdown-item" onclick="document.execCommand('redo')">Redo <span class="sc">Ctrl+Y</span></div>
+      <div class="dd-sep"></div>
+      <div class="dropdown-item" onclick="document.execCommand('selectAll')">Select All <span class="sc">Ctrl+A</span></div>
+    </div>
+  </div>
+  <div class="menu-item">Format
+    <div class="dropdown">
+      <div class="dropdown-item" onclick="document.execCommand('bold')">Bold <span class="sc">Ctrl+B</span></div>
+      <div class="dropdown-item" onclick="document.execCommand('italic')">Italic <span class="sc">Ctrl+I</span></div>
+      <div class="dropdown-item" onclick="document.execCommand('underline')">Underline <span class="sc">Ctrl+U</span></div>
+      <div class="dd-sep"></div>
+      <div class="dropdown-item" onclick="document.execCommand('justifyLeft')">Align Left</div>
+      <div class="dropdown-item" onclick="document.execCommand('justifyCenter')">Align Centre</div>
+      <div class="dropdown-item" onclick="document.execCommand('justifyRight')">Align Right</div>
+      <div class="dropdown-item" onclick="document.execCommand('justifyFull')">Justify</div>
+    </div>
+  </div>
+  <div class="menu-item">Insert
+    <div class="dropdown">
+      <div class="dropdown-item" onclick="insertHR()">Horizontal Rule</div>
+      <div class="dropdown-item" onclick="renderAllLatex()">Render LaTeX in Document</div>
+    </div>
+  </div>
+  <div class="menu-item">View
+    <div class="dropdown">
+      <div class="dropdown-item" onclick="setZoom(60)">Zoom 60%</div>
+      <div class="dropdown-item" onclick="setZoom(75)">Zoom 75%</div>
+      <div class="dropdown-item" onclick="setZoom(100)">Zoom 100%</div>
+      <div class="dropdown-item" onclick="setZoom(125)">Zoom 125%</div>
+      <div class="dropdown-item" onclick="setZoom(150)">Zoom 150%</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN RIBBON -->
+<div class="ribbon">
+  <select class="rb-sel" style="width:120px;" id="fontFamily" onchange="applyFont(this.value)">
+    <option value="'EB Garamond',serif">EB Garamond</option>
+    <option value="'Times New Roman',serif">Times New Roman</option>
+    <option value="Georgia,serif">Georgia</option>
+    <option value="Arial,sans-serif">Arial</option>
+    <option value="'Nunito Sans',sans-serif">Nunito Sans</option>
+    <option value="'JetBrains Mono',monospace">Mono</option>
+    <option value="JameelNooriNastaliq,serif">Jameel Nastaliq (Urdu)</option>
+  </select>
+  <input type="number" class="fsize" id="fontSize" value="10" min="6" max="72" onchange="applyFontSize(this.value)" title="pt">
+  <div class="rsep"></div>
+
+  <button class="rb" onclick="document.execCommand('bold')" title="Bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button>
+  <button class="rb" onclick="document.execCommand('italic')" title="Italic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
+  <button class="rb" onclick="document.execCommand('underline')" title="Underline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" y1="20" x2="20" y2="20"/></svg></button>
+  <button class="rb" onclick="document.execCommand('undo')" title="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></button>
+  <button class="rb" onclick="document.execCommand('redo')" title="Redo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></button>
+  <div class="rsep"></div>
+
+  <button class="rb" onclick="document.execCommand('justifyLeft')" title="Left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg></button>
+  <button class="rb" onclick="document.execCommand('justifyCenter')" title="Centre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+  <button class="rb" onclick="document.execCommand('justifyRight')" title="Right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg></button>
+  <button class="rb" onclick="document.execCommand('justifyFull')" title="Justify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  <div class="rsep"></div>
+
+  <button class="rb" onclick="document.execCommand('insertUnorderedList')" title="Bullets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg></button>
+  <button class="rb" onclick="document.execCommand('insertOrderedList')" title="Numbered"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" font-size="6" fill="currentColor" stroke="none">1.</text><text x="2" y="14" font-size="6" fill="currentColor" stroke="none">2.</text><text x="2" y="20" font-size="6" fill="currentColor" stroke="none">3.</text></svg></button>
+  <div class="rsep"></div>
+
+  <label class="rb" title="Text Color" style="cursor:pointer;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 3L3 18h3l1.5-4h7L16 18h3L12 3z"/><rect x="3" y="20" width="18" height="2" rx="1" fill="#e53e3e" stroke="none"/></svg>
+    <input type="color" value="#000000" style="width:0;height:0;opacity:0;position:absolute;" onchange="document.execCommand('foreColor',false,this.value)">
+  </label>
+  <label class="rb" title="Highlight" style="cursor:pointer;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 20h8M12 16v4" stroke-linecap="round"/><rect x="3" y="20" width="18" height="2" rx="1" fill="#fbbf24" stroke="none"/></svg>
+    <input type="color" value="#fef08a" style="width:0;height:0;opacity:0;position:absolute;" onchange="document.execCommand('hiliteColor',false,this.value)">
+  </label>
+  <div class="rsep"></div>
+
+  <!-- LaTeX render button -->
+  <button class="rb" onclick="renderAllLatex()" title="Render all $…$ and $$…$$ LaTeX in the document" style="color:#7b2d8b;font-weight:700;font-size:13px;">∑ Render LaTeX</button>
+
+  <!-- Urdu RTL toggle -->
+  <button class="rb" id="urduBtn" onclick="toggleUrdu()" title="Toggle Urdu RTL mode" style="color:#1a6b3a;font-weight:700;">اردو</button>
+  <div class="rsep"></div>
+
+  <button class="rb" onclick="savePDF()" title="Save as PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Save PDF</button>
+  <button class="rb" onclick="saveDocx()" title="Save DOCX" style="color:#1a5c2a;font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Save DOCX</button>
+  <div class="rsep"></div>
+  <!-- Margins button -->
+  <div class="mp-wrap">
+    <button class="rb" id="marginBtn" onclick="toggleMarginPanel()" title="Adjust page margins" style="color:#5a3a8a;font-weight:600;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
+      Margins
+    </button>
+    <div class="margin-panel" id="marginPanel">
+      <h4>📐 Page Margins (inches)</h4>
+      <div class="mp-presets">
+        <button class="mp-preset" onclick="setPresetMargin('normal')">Normal</button>
+        <button class="mp-preset" onclick="setPresetMargin('narrow')">Narrow</button>
+        <button class="mp-preset" onclick="setPresetMargin('wide')">Wide</button>
+      </div>
+      <div class="mp-row">
+        <label>Top</label>
+        <input type="range" id="mTop" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mTop','mTopV')">
+        <span class="mp-val" id="mTopV">0.1″</span>
+      </div>
+      <div class="mp-row">
+        <label>Bottom</label>
+        <input type="range" id="mBot" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mBot','mBotV')">
+        <span class="mp-val" id="mBotV">0.1″</span>
+      </div>
+      <div class="mp-row">
+        <label>Left</label>
+        <input type="range" id="mLeft" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mLeft','mLeftV')">
+        <span class="mp-val" id="mLeftV">0.1″</span>
+      </div>
+      <div class="mp-row">
+        <label>Right</label>
+        <input type="range" id="mRight" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mRight','mRightV')">
+        <span class="mp-val" id="mRightV">0.1″</span>
+      </div>
+      <button class="mp-apply" onclick="applyMargins()">Apply Margins</button>
+    </div>
+  </div>
+</div>
+
+<!-- SMART FORMAT RIBBON -->
+<div class="smart-ribbon">
+  <span class="sm-label">Smart Format</span>
+  <div class="smsep"></div>
+  <button class="sm" onclick="transformAsterisks('bold')"><b>B</b> Bold Questions</button>
+  <button class="sm" onclick="transformAsterisks('serial')"># Add Serial No.</button>
+  <button class="sm" onclick="transformAsterisks('both')"><b>#B</b> Bold + Serial No.</button>
+  <div class="smsep"></div>
+  <button class="sm" onclick="transformAsterisks('reset')" style="color:#7a4a20;border-color:#c8a87a;background:#fff8f0;">✕ Remove *</button>
+  <span class="sm-hint">Select text first, or leave unselected to process all content</span>
+</div>
+</div><!-- /toolbar-area -->
+
+<!-- MAIN AREA -->
+<div class="main-area">
+  <div class="ruler"><canvas id="rulerCanvas"></canvas></div>
+
+  <div class="editor-scroll" id="editorScroll">
+    <div class="zoom-outer" id="zoomOuter">
+      <div class="zoom-wrapper" id="zoomWrapper">
+
+        <!-- PAGE 1 -->
+        <div class="page" id="page1">
+          <div class="page-header">
+            <div class="headline" contenteditable="true" spellcheck="false">Shadab Coaching Centre</div>
+          </div>
+          <div class="info-row">
+            <div class="info-left">
+              <div class="info-field"><label>Class:</label><input type="text" class="info-input" placeholder="e.g. 10-A"></div>
+              <div class="info-field"><label>Subject:</label><input type="text" class="info-input" placeholder="e.g. Mathematics"></div>
+            </div>
+            <div class="info-right">
+              <div class="info-field"><label>FM:</label><input type="text" class="info-input short" placeholder="100"></div>
+              <div class="info-field"><label>Time:</label><input type="text" class="info-input short" placeholder="3 hrs"></div>
+            </div>
+          </div>
+          <hr class="page-divider">
+          <hr class="page-divider thin">
+          <div class="columns-area" id="columnsArea" contenteditable="true" spellcheck="true"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span id="wordCount">Words: 0</span>
+    <span id="charCount">Characters: 0</span>
+    <div class="status-right">
+      <span id="pageCount">Pages: 1</span>
+      <div class="zoom-ctrl">
+        Zoom:
+        <input type="range" class="zoom-slider" min="40" max="200" value="100" id="zoomSlider" oninput="setZoom(this.value)">
+        <span id="zoomLabel">100%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE NAVIGATOR -->
+  <div class="page-nav" id="pageNav">
+    <button class="pg-nav-arrow" onclick="navPage(-1)" title="Previous page">&#8249;</button>
+    <div id="pgBtnRow" style="display:flex;gap:6px;align-items:center;"></div>
+    <button class="pg-nav-arrow" onclick="navPage(+1)" title="Next page">&#8250;</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════
+// MENU DROPDOWNS
+// ═══════════════════════════════════════
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.stopPropagation();
+    const was = item.classList.contains('open');
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open'));
+    if (!was) item.classList.add('open');
+  });
+  item.addEventListener('mouseenter', () => {
+    if (document.querySelector('.menu-item.open')) {
+      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open'));
+      item.classList.add('open');
+    }
+  });
+});
+document.addEventListener('click', () => document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open')));
+
+// ═══════════════════════════════════════
+// ZOOM  — absolute outer/wrapper pattern
+// outer is sized to true scaled dimensions → scrollbars are correct
+// wrapper is absolutely inside outer, scaled from top-left
+// When content narrower than viewport → centred via left offset
+// ═══════════════════════════════════════
+let currentZoom = 1.0;
+let _natW = 0, _natH = 0;
+
+function cacheNatSize() {
+  const w = document.getElementById('zoomWrapper');
+  const prev = w.style.transform;
+  w.style.transform = 'none';
+  _natW = w.offsetWidth;
+  _natH = w.offsetHeight;
+  w.style.transform = prev || '';
+}
+
+function applyZoom(z, fx, fy) {
+  const scroll  = document.getElementById('editorScroll');
+  const outer   = document.getElementById('zoomOuter');
+  const wrapper = document.getElementById('zoomWrapper');
+  z = Math.min(2.5, Math.max(0.3, z));
+
+  // Focal point in unscaled content coords
+  const cx = (scroll.scrollLeft + fx) / currentZoom;
+  const cy = (scroll.scrollTop  + fy) / currentZoom;
+  currentZoom = z;
+
+  const sw  = _natW * z, sh = _natH * z;
+  const vpW = scroll.clientWidth, vpH = scroll.clientHeight;
+
+  wrapper.style.transform       = `scale(${z})`;
+  wrapper.style.transformOrigin = 'top left';
+
+  // Outer tells the scrollbar the real visual size
+  outer.style.width  = Math.max(vpW, sw) + 'px';
+  outer.style.height = Math.max(vpH, sh) + 'px';
+
+  // Horizontally centre when content is narrower than viewport
+  const ox = sw < vpW ? (vpW - sw) / 2 : 0;
+  wrapper.style.left = ox + 'px';
+
+  // Restore focal point
+  scroll.scrollLeft = Math.max(0, cx * z - fx + ox);
+  scroll.scrollTop  = Math.max(0, cy * z - fy);
+
+  document.getElementById('zoomSlider').value      = Math.round(z * 100);
+  document.getElementById('zoomLabel').textContent = Math.round(z * 100) + '%';
+  scheduleRuler();
+}
+
+function setZoom(val) {
+  const s = document.getElementById('editorScroll');
+  applyZoom(parseFloat(val) / 100, s.clientWidth / 2, s.clientHeight / 2);
+}
+
+let _rulerTimer = null;
+function scheduleRuler() { clearTimeout(_rulerTimer); _rulerTimer = setTimeout(drawRuler, 80); }
+
+window.addEventListener('resize', () => {
+  cacheNatSize();
+  const s = document.getElementById('editorScroll');
+  applyZoom(currentZoom, s.clientWidth / 2, s.clientHeight / 2);
+  drawRuler();
+});
+
+// Block browser zoom
+document.addEventListener('wheel', e => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  const s = document.getElementById('editorScroll');
+  const r = s.getBoundingClientRect();
+  applyZoom(currentZoom * (e.deltaY < 0 ? 1.08 : 1/1.08), e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+
+document.addEventListener('keydown', e => {
+  if (!e.ctrlKey) return;
+  if (e.key === '0') { e.preventDefault(); setZoom(100); }
+  else if (e.key === '+' || e.key === '=') { e.preventDefault(); setZoom(Math.round(currentZoom * 110)); }
+  else if (e.key === '-') { e.preventDefault(); setZoom(Math.round(currentZoom / 1.1 * 100)); }
+});
+
+// Pinch zoom — RAF batched
+(function() {
+  const scroll = document.getElementById('editorScroll');
+  let sd=null, sz=null, mx=null, my=null, pz=null, raf=null;
+  const pd = (a,b) => Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+  const flush = () => { raf=null; if(pz!==null){applyZoom(pz,mx,my);pz=null;} };
+
+  scroll.addEventListener('touchstart', e => {
+    if (e.touches.length!==2) return;
+    e.preventDefault();
+    const r = scroll.getBoundingClientRect();
+    sd = pd(e.touches[0], e.touches[1]);
+    sz = currentZoom;
+    mx = (e.touches[0].clientX + e.touches[1].clientX)/2 - r.left;
+    my = (e.touches[0].clientY + e.touches[1].clientY)/2 - r.top;
+  }, {passive:false});
+
+  scroll.addEventListener('touchmove', e => {
+    if (e.touches.length!==2 || !sd) return;
+    e.preventDefault();
+    pz = sz * pd(e.touches[0], e.touches[1]) / sd;
+    if (!raf) raf = requestAnimationFrame(flush);
+  }, {passive:false});
+
+  const end = () => { sd=null; cancelAnimationFrame(raf); raf=null; };
+  scroll.addEventListener('touchend', end);
+  scroll.addEventListener('touchcancel', end);
+})();
+
+// ═══════════════════════════════════════
+// COLUMN HEIGHT (fills available page space)
+// ═══════════════════════════════════════
+function recalcColH(area) {
+  const page  = area.closest('.page');
+  const ps    = getComputedStyle(page);
+  const inner = page.clientHeight - parseFloat(ps.paddingTop) - parseFloat(ps.paddingBottom);
+  let used = 0;
+  for (const c of page.children) {
+    if (c === area) break;
+    used += c.offsetHeight
+          + parseFloat(getComputedStyle(c).marginTop    || 0)
+          + parseFloat(getComputedStyle(c).marginBottom || 0);
+  }
+  area.style.height = Math.max(40, Math.floor(inner - used)) + 'px';
+}
+
+// ═══════════════════════════════════════
+// PAGINATION  — spill overflow to next page
+// ═══════════════════════════════════════
+// CSS columns overflow HORIZONTALLY (4th column to the right).
+// scrollWidth > clientWidth detects this even with overflow:hidden.
+function isOverflow(area) {
+  return area.scrollWidth > area.clientWidth + 2;
+}
+
+let _rfTimer = null;
+function scheduleReflow() { clearTimeout(_rfTimer); _rfTimer = setTimeout(reflowPages, 380); }
+
+function reflowPages() {
+  const wrapper = document.getElementById('zoomWrapper');
+  let pages = () => [...wrapper.querySelectorAll('.page')];
+
+  // FORWARD — push overflow to next page
+  let all = pages();
+  for (let i = 0; i < all.length; i++) {
+    const area = all[i].querySelector('.columns-area');
+    if (!area) continue;
+    let g = 0;
+    while (isOverflow(area) && g++ < 800) {
+      if (!all[i+1]) {
+        const np = makeContPage(all.length + 1);
+        wrapper.appendChild(np);
+        requestAnimationFrame(() => {
+          recalcColH(np.querySelector('.columns-area'));
+          cacheNatSize();
+          // Re-apply zoom to resize outer container
+          const s = document.getElementById('editorScroll');
+          applyZoom(currentZoom, s.clientWidth / 2, s.clientHeight / 2);
+        });
+        all = pages();
+      }
+      const nextArea = all[i+1].querySelector('.columns-area');
+      const kids = blockKids(area);
+      if (!kids.length) break;
+      const last = kids[kids.length-1];
+      area.removeChild(last);
+      nextArea.insertBefore(last, nextArea.firstChild);
+    }
+  }
+
+  // BACKWARD — pull back if room exists
+  all = pages();
+  for (let i = all.length-1; i > 0; i--) {
+    const area = all[i].querySelector('.columns-area');
+    const prev = all[i-1].querySelector('.columns-area');
+    if (!area || !prev) continue;
+    let g = 0;
+    while (g++ < 800) {
+      const fc = blockKids(area)[0];
+      if (!fc) break;
+      prev.appendChild(fc);
+      if (isOverflow(prev)) { prev.removeChild(fc); area.insertBefore(fc, area.firstChild); break; }
+    }
+  }
+
+  // Trim empty continuation pages
+  [...wrapper.querySelectorAll('.page-cont')].reverse().forEach(p => {
+    const a = p.querySelector('.columns-area');
+    if (!a || !a.innerText.trim()) p.remove();
+  });
+
+  updateCounts();
+}
+
+function blockKids(area) {
+  return [...area.childNodes].filter(n => n.nodeType===1 || (n.nodeType===3 && n.textContent.trim()));
+}
+
+function makeContPage(_num) {
+  const p = document.createElement('div');
+  p.className = 'page page-cont';
+  p.innerHTML = `<div class="columns-area" contenteditable="true" spellcheck="true"></div>`;
+  bindArea(p.querySelector('.columns-area'));
+  return p;
+}
+
+function bindArea(area) {
+  area.addEventListener('input', () => { updateCounts(); scheduleReflow(); });
+  // Mirror urdu mode state onto newly created pages
+  if (urduMode) applyUrduToArea(area);
+}
+
+// ═══════════════════════════════════════
+// COUNTS + PAGE NAVIGATOR
+// ═══════════════════════════════════════
+let _currentPage = 1;
+
+function updateCounts() {
+  let t = '';
+  document.querySelectorAll('.columns-area').forEach(a => t += (a.innerText||'') + ' ');
+  const w = t.trim() ? t.trim().split(/\s+/).length : 0;
+  document.getElementById('wordCount').textContent  = 'Words: ' + w;
+  document.getElementById('charCount').textContent  = 'Characters: ' + t.replace(/\s/g,'').length;
+  const n = document.querySelectorAll('.page').length;
+  document.getElementById('pageCount').textContent  = 'Pages: ' + n;
+  rebuildPageNav(n);
+}
+
+function rebuildPageNav(n) {
+  const row = document.getElementById('pgBtnRow');
+  row.innerHTML = '';
+  for (let i = 1; i <= n; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'pg-btn' + (i === _currentPage ? ' active' : '');
+    btn.textContent = 'P' + i;
+    btn.onclick = () => goToPage(i);
+    row.appendChild(btn);
+  }
+}
+
+function goToPage(num) {
+  const pages = document.querySelectorAll('.page');
+  if (num < 1 || num > pages.length) return;
+  _currentPage = num;
+  // Scroll the page into view inside the scaled wrapper
+  const scroll  = document.getElementById('editorScroll');
+  const wrapper = document.getElementById('zoomWrapper');
+  const target  = pages[num - 1];
+  const wRect   = wrapper.getBoundingClientRect();
+  const tRect   = target.getBoundingClientRect();
+  // Position in unscaled wrapper coords
+  const topInWrapper = (tRect.top - wRect.top) / currentZoom;
+  const leftInWrapper = (tRect.left - wRect.left) / currentZoom;
+  // Convert to scroll position
+  const ox = parseFloat(wrapper.style.left) || 0;
+  scroll.scrollTop  = topInWrapper * currentZoom - 24;  // 24px padding
+  scroll.scrollLeft = Math.max(0, leftInWrapper * currentZoom + ox - (scroll.clientWidth - target.offsetWidth * currentZoom) / 2);
+  // Update active button
+  document.querySelectorAll('.pg-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === num));
+}
+
+function navPage(delta) {
+  const n = document.querySelectorAll('.page').length;
+  goToPage(Math.min(n, Math.max(1, _currentPage + delta)));
+}
+
+// Track which page is visible while scrolling
+document.getElementById('editorScroll').addEventListener('scroll', () => {
+  const scroll  = document.getElementById('editorScroll');
+  const wrapper = document.getElementById('zoomWrapper');
+  const pages   = [...document.querySelectorAll('.page')];
+  const mid     = scroll.scrollTop + scroll.clientHeight / 2;
+  let closest = 0, minDist = Infinity;
+  pages.forEach((p, i) => {
+    const wRect = wrapper.getBoundingClientRect();
+    const pRect = p.getBoundingClientRect();
+    const pTop  = (pRect.top - wRect.top) / currentZoom * currentZoom;
+    const pBot  = pTop + p.offsetHeight * currentZoom;
+    const pMid  = (pTop + pBot) / 2 - scroll.scrollTop;
+    const dist  = Math.abs(pMid - scroll.clientHeight / 2);
+    if (dist < minDist) { minDist = dist; closest = i; }
+  });
+  if (closest + 1 !== _currentPage) {
+    _currentPage = closest + 1;
+    document.querySelectorAll('.pg-btn').forEach((b, i) => b.classList.toggle('active', i === closest));
+  }
+}, { passive: true });
+
+// ═══════════════════════════════════════
+// PASTE — convert plain text to <div> blocks
+// ═══════════════════════════════════════
+document.getElementById('editorScroll').addEventListener('paste', e => {
+  if (!e.target.closest('.columns-area')) return;
+  e.preventDefault();
+  const raw = (e.clipboardData || window.clipboardData).getData('text/plain');
+  const html = raw.split(/\r?\n/).map(l => `<div>${escHtml(l)||'<br>'}</div>`).join('');
+  document.execCommand('insertHTML', false, html);
+  scheduleReflow(); updateCounts();
+}, true);
+
+// ═══════════════════════════════════════
+// FONT / SIZE
+// ═══════════════════════════════════════
+function applyFont(f) {
+  document.querySelectorAll('.columns-area').forEach(a => {
+    if (!a.classList.contains('urdu-mode')) a.style.fontFamily = f;
+  });
+}
+function applyFontSize(s) {
+  // Store as px — pixel-accurate sizes (1pt = 96/72 px)
+  const px = (parseFloat(s) * 96 / 72).toFixed(2).replace(/\.?0+$/, '') + 'px';
+  document.querySelectorAll('.columns-area').forEach(a => {
+    if (!a.classList.contains('urdu-mode')) a.style.fontSize = px;
+  });
+  setTimeout(reflowPages, 300);
+}
+
+// ═══════════════════════════════════════
+// URDU RTL MODE
+// ═══════════════════════════════════════
+let urduMode = false;
+// Jameel Noori is loaded via CDN <link> in <head> — no manual FontFace needed
+
+const URDU_FONT = "JameelNooriNastaliq, 'Nastaliq', serif";
+const URDU_SIZE = '20px';  // ≈ 15pt → px
+const URDU_LH   = '2.4';
+
+function applyUrduToArea(a) {
+  a.classList.add('urdu-mode');
+  a.style.fontFamily = URDU_FONT;
+  a.style.fontSize   = URDU_SIZE;
+  a.style.lineHeight = URDU_LH;
+  a.dir = 'rtl';
+}
+function removeUrduFromArea(a) {
+  a.classList.remove('urdu-mode');
+  a.style.fontFamily = '';
+  const ptVal = parseFloat(document.getElementById('fontSize').value) || 10;
+  a.style.fontSize = (ptVal * 96 / 72).toFixed(2).replace(/\.?0+$/, '') + 'px';
+  a.style.lineHeight = '';
+  a.dir = 'ltr';
+}
+
+function toggleUrdu() {
+  urduMode = !urduMode;
+
+  document.querySelectorAll('.columns-area').forEach(a => {
+    if (urduMode) applyUrduToArea(a); else removeUrduFromArea(a);
+  });
+
+  const btn = document.getElementById('urduBtn');
+  btn.classList.toggle('on', urduMode);
+  btn.style.color      = urduMode ? '#fff'    : '#1a6b3a';
+  btn.style.background = urduMode ? '#1a6b3a' : '';
+  btn.style.border     = urduMode ? '1px solid #1a6b3a' : '';
+  btn.title = urduMode ? 'Switch to LTR (English) mode' : 'Switch to RTL (Urdu) mode';
+
+  document.querySelectorAll('.page').forEach(p => {
+    p.style.direction = urduMode ? 'rtl' : 'ltr';
+  });
+  document.getElementById('fontFamily').value = urduMode
+    ? "JameelNooriNastaliq,serif"
+    : "'EB Garamond',serif";
+}
+
+// ═══════════════════════════════════════
+// LATEX  (MathJax 3) — auto-render all $…$ / $$…$$ in document
+// ═══════════════════════════════════════
+function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/**
+ * Full LaTeX document renderer:
+ * 1. Collects raw LaTeX source from ALL pages
+ * 2. Strips preamble (\documentclass … \begin{document}) and \end{document}
+ * 3. Converts LaTeX structural commands → HTML
+ * 4. Puts HTML into page 1, removes continuation pages, reflows
+ * 5. Calls MathJax to typeset all remaining $…$ / $$…$$ math
+ */
+function renderAllLatex() {
+  if (typeof MathJax === 'undefined' || !MathJax.typesetPromise) {
+    alert('MathJax is still loading — please try again in a moment.');
+    return;
+  }
+
+  // ── 1. Collect raw text from every page ──────────────────────────────
+  const allAreas = [...document.querySelectorAll('.columns-area')];
+  let src = allAreas.map(a => a.innerText).join('\n');
+
+  const hasMath  = src.includes('$');
+  const hasLatex = /\\(begin|end|item|section|textbf|usepackage|documentclass)/i.test(src);
+
+  if (!hasMath && !hasLatex) {
+    alert('No LaTeX found.\nPaste LaTeX source or write $…$ math equations, then click Render LaTeX.');
+    return;
+  }
+
+  // ── 2. Strip LaTeX preamble & document wrapper ───────────────────────
+  // Remove everything up to (and including) \begin{document}
+  src = src.replace(/^[\s\S]*?\\begin\{document\}/m, '');
+  // Remove \end{document} and anything after
+  src = src.replace(/\\end\{document\}[\s\S]*$/m, '');
+
+  // ── 3. Convert LaTeX → HTML ───────────────────────────────────────────
+  function latexToHtml(tex) {
+    // Remove % comments (but keep the newline)
+    tex = tex.replace(/%[^\n]*/g, '');
+
+    // ── Spacing / breaks ──────────────────────────────────────────────
+    tex = tex.replace(/\\\\(\s*\[[\d.]+[a-z]*\])?/g, '<br>');  // \\ and \\[1em]
+    tex = tex.replace(/\\newline\b/g, '<br>');
+    tex = tex.replace(/\\hline\b/g, '<hr style="border-top:1px solid #888;margin:3px 0;">');
+    tex = tex.replace(/\\vspace\*?\{[^}]*\}/g, '');
+    tex = tex.replace(/\\hspace\*?\{[^}]*\}/g, '&nbsp;');
+    tex = tex.replace(/\\noindent\b/g, '');
+    tex = tex.replace(/\\medskip\b/g, '<div style="height:6px"></div>');
+    tex = tex.replace(/\\bigskip\b/g, '<div style="height:10px"></div>');
+    tex = tex.replace(/\\smallskip\b/g, '<div style="height:3px"></div>');
+    tex = tex.replace(/\\quad\b/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+    tex = tex.replace(/\\qquad\b/g, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
+    tex = tex.replace(/~~/g, '&nbsp;&nbsp;');
+    tex = tex.replace(/~/g, '&nbsp;');
+
+    // ── Font / style commands ─────────────────────────────────────────
+    // Recursive braces handler for simple commands
+    function cmd1(tag) {
+      return (_, inner) => `<${tag}>${inner}</${tag}>`;
+    }
+    // Repeatedly apply so nested braces resolve
+    for (let i = 0; i < 4; i++) {
+      tex = tex.replace(/\\textbf\{([^{}]*)\}/g, cmd1('b'));
+      tex = tex.replace(/\\textit\{([^{}]*)\}/g,  cmd1('i'));
+      tex = tex.replace(/\\emph\{([^{}]*)\}/g,    cmd1('i'));
+      tex = tex.replace(/\\underline\{([^{}]*)\}/g, cmd1('u'));
+      tex = tex.replace(/\\texttt\{([^{}]*)\}/g,  (_, s) => `<code>${s}</code>`);
+      tex = tex.replace(/\\text\{([^{}]*)\}/g,    (_, s) => s);
+      tex = tex.replace(/\\mbox\{([^{}]*)\}/g,    (_, s) => s);
+    }
+
+    // Size declarations (scoped loosely — just wrap remaining line context)
+    tex = tex.replace(/\{\\Large\s+([^}]+)\}/g,  (_, s) => `<span style="font-size:1.3em">${s}</span>`);
+    tex = tex.replace(/\{\\large\s+([^}]+)\}/g,  (_, s) => `<span style="font-size:1.15em">${s}</span>`);
+    tex = tex.replace(/\{\\small\s+([^}]+)\}/g,  (_, s) => `<span style="font-size:.88em">${s}</span>`);
+    tex = tex.replace(/\{\\footnotesize\s+([^}]+)\}/g, (_, s) => `<span style="font-size:.8em">${s}</span>`);
+    tex = tex.replace(/\\Large\b/g, '').replace(/\\large\b/g, '').replace(/\\small\b/g, '');
+
+    // ── Sections ──────────────────────────────────────────────────────
+    tex = tex.replace(/\\section\*?\{([^}]*)\}/g,
+      (_, t) => `\n<div style="font-weight:700;font-size:1.05em;margin:6px 0 2px;border-bottom:1px solid #aaa;padding-bottom:1px;">${t}</div>\n`);
+    tex = tex.replace(/\\subsection\*?\{([^}]*)\}/g,
+      (_, t) => `\n<div style="font-weight:700;margin:4px 0 1px;">${t}</div>\n`);
+    tex = tex.replace(/\\subsubsection\*?\{([^}]*)\}/g,
+      (_, t) => `\n<div style="font-weight:600;font-style:italic;margin:3px 0 1px;">${t}</div>\n`);
+
+    // ── Environments ──────────────────────────────────────────────────
+    // center
+    tex = tex.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/g,
+      (_, body) => `<div style="text-align:center;">${processBody(body)}</div>`);
+
+    // enumerate (numbered list)
+    tex = tex.replace(/\\begin\{enumerate\}([\s\S]*?)\\end\{enumerate\}/g,
+      (_, body) => `<ol style="margin:2px 0 2px 18px;padding:0;">${itemsToLi(body)}</ol>`);
+
+    // itemize (bullet list)
+    tex = tex.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/g,
+      (_, body) => `<ul style="margin:2px 0 2px 18px;padding:0;">${itemsToLi(body)}</ul>`);
+
+    // description
+    tex = tex.replace(/\\begin\{description\}([\s\S]*?)\\end\{description\}/g,
+      (_, body) => `<dl style="margin:2px 0 2px 8px;">${descItems(body)}</dl>`);
+
+    // verbatim / lstlisting
+    tex = tex.replace(/\\begin\{verbatim\}([\s\S]*?)\\end\{verbatim\}/g,
+      (_, body) => `<pre style="font-family:monospace;font-size:.85em;background:#f5f5f5;padding:4px 6px;border-radius:3px;">${escHtml(body.trim())}</pre>`);
+    tex = tex.replace(/\\begin\{lstlisting\}([\s\S]*?)\\end\{lstlisting\}/g,
+      (_, body) => `<pre style="font-family:monospace;font-size:.85em;background:#f5f5f5;padding:4px 6px;border-radius:3px;">${escHtml(body.trim())}</pre>`);
+
+    // quote / quotation
+    tex = tex.replace(/\\begin\{quotation?\}([\s\S]*?)\\end\{quotation?\}/g,
+      (_, body) => `<blockquote style="margin:4px 0 4px 16px;border-left:2px solid #ccc;padding-left:8px;color:#444;">${processBody(body)}</blockquote>`);
+
+    // Generic remaining environments — strip begin/end tags
+    tex = tex.replace(/\\begin\{[^}]*\}/g, '').replace(/\\end\{[^}]*\}/g, '');
+
+    // ── Miscellaneous commands ────────────────────────────────────────
+    tex = tex.replace(/\\item\[([^\]]*)\]/g, (_, label) => `<b>${label}</b> `); // \item[label]
+    tex = tex.replace(/\\item\b/g, '');  // bare \item (already handled by itemsToLi)
+    tex = tex.replace(/\\maketitle\b/g, '');
+    tex = tex.replace(/\\tableofcontents\b/g, '');
+    tex = tex.replace(/\\newpage\b/g, '');
+    tex = tex.replace(/\\clearpage\b/g, '');
+    tex = tex.replace(/\\pagebreak\b/g, '');
+    tex = tex.replace(/\\centering\b/g, '');
+    tex = tex.replace(/\\raggedright\b/g, '');
+    tex = tex.replace(/\\raggedleft\b/g, '');
+    tex = tex.replace(/\\par\b/g, '\n');
+    tex = tex.replace(/\\footnote\{[^}]*\}/g, '');
+
+    // Remove remaining unknown \commands (but NOT math commands inside $…$)
+    // We protect math first, strip commands outside math, restore math
+    tex = protectedReplace(tex, /\\[a-zA-Z]+\*?\s*/g, '');
+
+    // Remove stray bare braces
+    tex = tex.replace(/(?<!\$[^$]*)\{([^{}]*)\}(?![^$]*\$)/g, '$1');
+
+    return tex;
+  }
+
+  // Helper: protect $…$ / $$…$$ zones while doing replacements outside them
+  function protectedReplace(src, pattern, repl) {
+    const zones = [];
+    const placeholder = '\x00MATHZONE\x00';
+    // Extract math zones
+    const protected_ = src.replace(/\$\$[\s\S]*?\$\$|\$[^\n$]*\$/g, m => {
+      zones.push(m);
+      return placeholder + (zones.length - 1) + '\x00';
+    });
+    // Apply replacement outside math
+    const replaced = protected_.replace(pattern, repl);
+    // Restore math zones
+    return replaced.replace(/\x00MATHZONE\x00(\d+)\x00/g, (_, i) => zones[+i]);
+  }
+
+  // Helper: convert \item lines inside enumerate/itemize to <li>
+  function itemsToLi(body) {
+    // Split on \item
+    const parts = body.split(/\\item(?:\[[^\]]*\])?/);
+    return parts.slice(1).map(p => {
+      const content = processBody(p.trim());
+      return `<li style="margin-bottom:1px;">${content}</li>`;
+    }).join('');
+  }
+
+  // Helper: description items
+  function descItems(body) {
+    const parts = body.split(/\\item/);
+    return parts.slice(1).map(p => {
+      const m = p.match(/^\[([^\]]*)\]([\s\S]*)/);
+      if (m) return `<dt style="font-weight:700;">${m[1]}</dt><dd style="margin-left:12px;">${processBody(m[2].trim())}</dd>`;
+      return `<dd style="margin-left:12px;">${processBody(p.trim())}</dd>`;
+    }).join('');
+  }
+
+  // Helper: process a body of text (inline conversion)
+  function processBody(t) {
+    return t.trim().split(/\n{2,}/).map(para => {
+      const line = para.replace(/\n/g, ' ').trim();
+      return line ? `<div>${line}</div>` : '';
+    }).join('');
+  }
+
+  // ── 4. Run the converter ─────────────────────────────────────────────
+  let html = latexToHtml(src);
+
+  // Convert remaining blank lines / paragraphs to <div> blocks
+  const lines = html.split('\n');
+  const divLines = lines.map(line => {
+    const t = line.trim();
+    if (!t) return '';
+    // Already an HTML tag?
+    if (t.startsWith('<')) return t;
+    return `<div>${t}</div>`;
+  }).filter(l => l !== '').join('');
+
+  // ── 5. Put HTML into page 1, remove continuation pages, reflow ───────
+  document.querySelectorAll('.page-cont').forEach(p => p.remove());
+  const primary = document.getElementById('columnsArea');
+  primary.innerHTML = divLines;
+
+  updateCounts();
+  setTimeout(() => {
+    reflowPages();
+    // ── 6. Typeset math with MathJax ─────────────────────────────────
+    const areas = [...document.querySelectorAll('.columns-area')];
+    MathJax.typesetPromise(areas)
+      .then(() => { updateCounts(); setTimeout(reflowPages, 300); })
+      .catch(err => console.warn('MathJax error:', err));
+  }, 250);
+}
+
+// Auto-render on paste
+function renderLatexInArea(area) { renderAllLatex(); }
+
+// ═══════════════════════════════════════
+// MISC
+// ═══════════════════════════════════════
+function insertHR() {
+  const area = document.activeElement.closest('.columns-area') || document.getElementById('columnsArea');
+  area.focus();
+  document.execCommand('insertHTML', false, '<hr style="border:none;border-top:1px solid #aaa;margin:4px 0;">');
+}
+function clearAll() {
+  if (!confirm('Clear all content?')) return;
+  document.querySelectorAll('.page-cont').forEach(p => p.remove());
+  document.getElementById('columnsArea').innerHTML = '';
+  updateCounts();
+}
+
+// ═══════════════════════════════════════
+// RULER
+// ═══════════════════════════════════════
+function drawRuler() {
+  const canvas = document.getElementById('rulerCanvas');
+  const scroll = document.getElementById('editorScroll');
+  const dpr = window.devicePixelRatio || 1;
+  const W = scroll.offsetWidth, H = 20;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.fillStyle = '#f8f8f8'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(W,H); ctx.stroke();
+  ctx.fillStyle = '#999'; ctx.font = '8px Nunito Sans,sans-serif'; ctx.textAlign = 'center';
+  const pageWpx = 793.7 * currentZoom; // 210mm at 96dpi * zoom
+  const ox = (W - pageWpx) / 2 + 53 * currentZoom;
+  for (let cm = 0; cm <= 18; cm++) {
+    const x = ox + cm * 37.8 * currentZoom;
+    const t = cm%2===0 ? 8 : 4;
+    ctx.beginPath(); ctx.moveTo(x,H-t); ctx.lineTo(x,H); ctx.stroke();
+    if (cm%2===0 && cm>0) ctx.fillText(cm, x, H-9);
+  }
+}
+
+// ═══════════════════════════════════════
+// SMART FORMAT  (* → bold / serial / both)
+// ═══════════════════════════════════════
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function transformAsterisks(mode) {
+  const sel = window.getSelection();
+  let hasSel = false, range = null, selArea = null;
+
+  // Check if there is a real selection inside any columns-area
+  if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+    const r = sel.getRangeAt(0);
+    document.querySelectorAll('.columns-area').forEach(a => {
+      if (!selArea && a.contains(r.commonAncestorContainer)) { hasSel = true; range = r.cloneRange(); selArea = a; }
+    });
+  }
+
+  function buildHtml(text) {
+    let n = 1;
+    return text.split('\n').map(line => {
+      const t = line.trim();
+      if (t.startsWith('*')) {
+        const q = t.slice(1).trim();
+        if (mode==='bold')   return `<div><b>${escHtml(q)}</b></div>`;
+        if (mode==='serial') return `<div>${n++}. ${escHtml(q)}</div>`;
+        if (mode==='both')   return `<div><b>${n++}. ${escHtml(q)}</b></div>`;
+        return `<div>${escHtml(q)}</div>`;
+      }
+      return `<div>${escHtml(line)||'<br>'}</div>`;
+    }).join('');
+  }
+
+  if (hasSel) {
+    // Selection mode: transform only selected text in its area
+    const text = sel.toString();
+    if (!text.trim()) { alert('No content found.'); return; }
+    if (mode !== 'reset' && !text.split('\n').some(l => l.trim().startsWith('*'))) { alert('No lines starting with * found.'); return; }
+    selArea.focus(); sel.removeAllRanges(); sel.addRange(range);
+    document.execCommand('insertHTML', false, buildHtml(text));
+  } else {
+    // No-selection mode: gather ALL pages, merge, process, put in page 1, reflow distributes
+    const allAreas = [...document.querySelectorAll('.columns-area')];
+    const text = allAreas.map(a => a.innerText).join('\n').replace(/\n{3,}/g, '\n\n');
+    if (!text.trim()) { alert('No content found.'); return; }
+    if (mode !== 'reset' && !text.split('\n').some(l => l.trim().startsWith('*'))) { alert('No lines starting with * found.'); return; }
+    // Remove continuation pages, dump all HTML into page 1, let reflowPages redistribute
+    document.querySelectorAll('.page-cont').forEach(p => p.remove());
+    document.getElementById('columnsArea').innerHTML = buildHtml(text);
+  }
+
+  updateCounts();
+  setTimeout(reflowPages, 200);
+}
+
+// ═══════════════════════════════════════
+// SAVE AS PDF
+//
+// Renders the document into a hidden off-screen iframe inside the current
+// page, waits for fonts + MathJax SVGs to settle, then calls
+// iframe.contentWindow.print().
+//
+// On Android Chrome this triggers the native print/PDF/share sheet
+// WITHOUT opening any new window or tab.
+// On desktop it opens the browser's print dialog (Save as PDF works there).
+//
+// MathJax SVG defs are inlined per-equation so they survive the new
+// document context.
+// ═══════════════════════════════════════
+async function savePDF() {
+  const pages = [...document.querySelectorAll('.page')];
+  if (!pages.length) { alert('Nothing to export.'); return; }
+
+  const btn      = document.querySelector('[onclick="savePDF()"]');
+  const origHTML = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = origHTML.replace(/Save PDF|Generating…|Compiling…|Preparing…/, 'Preparing…'); }
+
+  // Create the iframe immediately so it's in the DOM
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  // Off-screen but NOT display:none — must be rendered for fonts/layout
+  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;';
+  document.body.appendChild(iframe);
+
+  try {
+    // ── 1. Collect metadata ───────────────────────────────────────────
+    const headline = document.querySelector('.headline')?.innerHTML || 'Shadab Coaching Centre';
+    const titleTxt = document.querySelector('.headline')?.innerText?.trim() || 'Shadab Coaching Centre';
+    const inputs   = [...document.querySelectorAll('.info-input')];
+    const [cls, subj, fm, time] = inputs.map(i => escHtml(i.value || ''));
+    const pad    = pages[0].style.padding || '0.1in';
+    const areaEl = pages[0].querySelector('.columns-area');
+    const aFont  = areaEl?.style.fontFamily || "'EB Garamond',Georgia,serif";
+    const aSize  = areaEl?.style.fontSize   || '14px';
+    const aLH    = areaEl?.style.lineHeight || '1.65';
+    const aDir   = areaEl?.dir || 'ltr';
+    const isUrdu = areaEl?.classList.contains('urdu-mode') || false;
+
+    // ── 2. Inline MathJax defs per-equation ──────────────────────────
+    // MathJax SVG uses a shared <symbol> pool referenced by <use href>.
+    // Those refs break in a new document — fix by cloning the defs into
+    // every individual equation <svg> before serialising.
+    const globalDefsEl   = document.querySelector('body > svg[style*="display"]');
+    const globalDefsHTML = globalDefsEl
+      ? (globalDefsEl.querySelector('defs')?.innerHTML || globalDefsEl.innerHTML)
+      : '';
+
+    function serialiseArea(area) {
+      const clone = area.cloneNode(true);
+      if (globalDefsHTML) {
+        clone.querySelectorAll('mjx-container svg').forEach(svg => {
+          let d = svg.querySelector('defs');
+          if (!d) {
+            d = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.insertBefore(d, svg.firstChild);
+          }
+          d.innerHTML = globalDefsHTML + d.innerHTML;
+        });
+      }
+      return clone.innerHTML;
+    }
+
+    // ── 3. Build page HTML ────────────────────────────────────────────
+    function buildPageHTML(pg, idx) {
+      const area  = pg.querySelector('.columns-area');
+      const aHTML = area ? serialiseArea(area) : '';
+      if (idx === 0) {
+        const divs = [...pg.querySelectorAll('.page-divider')]
+          .map(h => `<hr class="${h.className}">`).join('');
+        return `<div class="page">
+          <div class="page-header"><div class="headline">${headline}</div></div>
+          <div class="info-row">
+            <div class="info-left">
+              <div class="info-field"><label>Class:</label><span class="info-val">${cls}</span></div>
+              <div class="info-field"><label>Subject:</label><span class="info-val">${subj}</span></div>
+            </div>
+            <div class="info-right">
+              <div class="info-field"><label>FM:</label><span class="info-val">${fm}</span></div>
+              <div class="info-field"><label>Time:</label><span class="info-val">${time}</span></div>
+            </div>
+          </div>
+          ${divs || '<hr class="page-divider"><hr class="page-divider thin">'}
+          <div class="columns-area">${aHTML}</div>
+        </div>`;
+      }
+      return `<div class="page">
+        <div class="cont-label">— continued —</div>
+        <div class="columns-area">${aHTML}</div>
+      </div>`;
+    }
+
+    const allPagesHTML = pages.map((pg, i) => buildPageHTML(pg, i)).join('\n');
+
+    // ── 4. Carry stylesheets + MathJax runtime CSS ────────────────────
+    const externalLinks = [...document.head.querySelectorAll('link[rel="stylesheet"]')]
+      .map(l => `<link rel="stylesheet" href="${l.href}">`).join('\n');
+    const mjxStyles = [...document.head.querySelectorAll('style')]
+      .map(s => `<style>${s.textContent}</style>`).join('\n');
+
+    // ── 5. Build print CSS ────────────────────────────────────────────
+    const printCSS = `
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { background: #fff; }
+      .page {
+        width: 210mm; min-height: 297mm; padding: ${pad};
+        background: #fff;
+        page-break-after: always; break-after: page;
+        overflow: visible;
+        font-size: 11pt; line-height: 1.5; color: #111;
+      }
+      .page:last-child { page-break-after: avoid; break-after: avoid; }
+      .page-header { text-align: center; margin-bottom: 4px; }
+      .headline { font-family: 'EB Garamond', serif; font-size: 15pt; font-weight: 700;
+        letter-spacing: .5px; color: #111; line-height: 1.15; margin-bottom: 3px; }
+      .info-row { display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 12px; margin-bottom: 6px; font-family: 'Nunito Sans', sans-serif; font-size: 9.5pt; }
+      .info-left, .info-right { display: flex; flex-direction: column; gap: 4px; }
+      .info-field { display: flex; align-items: center; gap: 6px; }
+      .info-field label { font-weight: 700; color: #222; min-width: 48px; font-size: 9pt; }
+      .info-val { font-family: 'EB Garamond', serif; font-size: 10pt; color: #111;
+        border-bottom: 1.5px solid #555; min-width: 80px; padding: 1px 2px; display: inline-block; }
+      .page-divider { border: none; border-top: 2px solid #222; margin: 6px 0 8px; }
+      .page-divider.thin { border-top-width: 1px; border-top-color: #999; margin: 3px 0 8px; }
+      .cont-label { font-size: 10pt; font-family: 'EB Garamond', serif; color: #888;
+        text-align: center; margin-bottom: 6px; font-style: italic; }
+      .columns-area {
+        column-count: 3; column-gap: 14px;
+        column-rule: 1px solid #ccc; column-fill: auto;
+        overflow: visible;
+        font-family: ${aFont}; font-size: ${aSize}; line-height: ${aLH};
+        color: #111; word-break: break-word;
+        text-align: ${isUrdu ? 'right' : 'justify'}; direction: ${aDir};
+      }
+      .columns-area div, .columns-area p { margin: 0; }
+      b, strong { font-weight: 700; } i, em { font-style: italic; } u { text-decoration: underline; }
+      hr { border: none; border-top: 1px solid #aaa; margin: 4px 0; }
+      ol { margin: 2px 0 2px 18px; padding: 0; } ul { margin: 2px 0 2px 18px; padding: 0; }
+      mjx-container { display: inline-block !important; vertical-align: middle; }
+      mjx-container svg { overflow: visible; }
+      @page { size: A4; margin: 0; }
+    `;
+
+    // ── 6. Write into the hidden iframe ──────────────────────────────
+    const printHTML = `<!DOCTYPE html>
+<html lang="${isUrdu ? 'ur' : 'en'}">
+<head>
+  <meta charset="UTF-8">
+  <title>${titleTxt}</title>
+  ${externalLinks}
+  ${mjxStyles}
+  <style>${printCSS}</style>
+</head>
+<body>${allPagesHTML}</body>
+</html>`;
+
+    await new Promise(resolve => {
+      iframe.onload = resolve;
+      iframe.srcdoc = printHTML;
+    });
+
+    // Wait for all fonts inside the iframe to finish loading
+    await iframe.contentDocument.fonts.ready;
+    // Extra settle time for CSS columns and MathJax SVG layout
+    await new Promise(r => setTimeout(r, 600));
+
+    // ── 7. Print from the iframe ──────────────────────────────────────
+    // On Android / iOS Chrome this triggers the native share/save-to-PDF
+    // sheet WITHOUT a canvas render — no main-thread freeze.
+    // On desktop it opens the browser print dialog where "Save as PDF" works.
+    iframe.contentWindow.print();
+
+  } finally {
+    // Remove iframe after a short delay so the print job can initiate
+    setTimeout(() => {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }, 2000);
+    if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
+  }
+}
+
+// ═══════════════════════════════════════
+// SAVE AS DOCX
+// ═══════════════════════════════════════
+async function saveDocx() {
+  if (typeof docx === 'undefined') { alert('DOCX library loading, try again in a moment.'); return; }
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, PageBreak } = docx;
+  const headline = document.querySelector('.headline')?.innerText?.trim() || 'Shadab Coaching Centre';
+  const fi = document.querySelectorAll('.info-input');
+  const [cls,subj,fm,time] = [...fi].map(i => i.value);
+  const kids = [];
+
+  kids.push(new Paragraph({ text:headline, heading:HeadingLevel.HEADING_1, alignment:AlignmentType.CENTER, spacing:{after:100} }));
+  if (cls||subj||fm||time) {
+    kids.push(new Paragraph({ children:[
+      new TextRun({ text: [cls&&`Class: ${cls}`, subj&&`Subject: ${subj}`, fm&&`FM: ${fm}`, time&&`Time: ${time}`].filter(Boolean).join('   ') })
+    ], spacing:{after:120} }));
+  }
+  kids.push(new Paragraph({ text:'─'.repeat(55), spacing:{after:120} }));
+
+  document.querySelectorAll('.columns-area').forEach((area, pi) => {
+    if (pi > 0) kids.push(new Paragraph({ children:[new PageBreak()] }));
+    [...area.childNodes].forEach(node => {
+      if (node.nodeType === 3) {
+        const t = node.textContent.trim();
+        if (t) kids.push(new Paragraph({ text:t, spacing:{after:60} }));
+        return;
+      }
+      if (node.nodeType !== 1) return;
+      // Check if it's a rendered LaTeX node
+      if (node.dataset?.latex) {
+        kids.push(new Paragraph({ text:`[LaTeX: ${node.dataset.latex}]`, spacing:{after:60} })); return;
+      }
+      const runs = [];
+      (function walk(el) {
+        el.childNodes.forEach(c => {
+          if (c.nodeType===3) {
+            const t = c.textContent;
+            if (t) runs.push(new TextRun({ text:t, bold:!!c.parentElement?.closest('b,strong') }));
+          } else if (c.nodeType===1) {
+            if (c.tagName==='BR') runs.push(new TextRun({text:'\n'}));
+            else walk(c);
+          }
+        });
+      })(node);
+      if (runs.length) kids.push(new Paragraph({ children:runs, spacing:{after:60} }));
+    });
+  });
+
+  const blob = await Packer.toBlob(new Document({
+    sections:[{ properties:{ page:{ margin:{top:680,right:793,bottom:680,left:793} } }, children:kids }]
+  }));
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href:url, download:`${headline}.docx` });
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.addEventListener('load', () => {
+  drawRuler();
+  const area = document.getElementById('columnsArea');
+  document.querySelectorAll('.info-input').forEach(i => i.addEventListener('focus', () => i.style.outline='none'));
+
+  requestAnimationFrame(() => {
+    recalcColH(area);
+    bindArea(area);
+    cacheNatSize();
+    const s = document.getElementById('editorScroll');
+
+    // Auto-fit: calculate zoom so the A4 page (210mm = ~794px) fits the viewport width
+    const pageNatW  = document.getElementById('page1').offsetWidth; // natural px width of one page
+    const wrapPad   = 80; // 40px each side padding
+    const fitZoom   = Math.min(1.0, (s.clientWidth - wrapPad) / (pageNatW + wrapPad));
+    const initZoom  = Math.max(0.3, parseFloat(fitZoom.toFixed(2)));
+
+    applyZoom(initZoom, s.clientWidth / 2, s.clientHeight / 2);
+    rebuildPageNav(1);
+  });
+
+  // Close margin panel on outside click
+  document.addEventListener('click', e => {
+    const panel = document.getElementById('marginPanel');
+    const btn   = document.getElementById('marginBtn');
+    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+      panel.classList.remove('open');
+    }
+  });
+
+  // KaTeX auto-render trigger
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof renderMathInElement !== 'undefined') {
+      document.querySelectorAll('.columns-area').forEach(a => {
+        renderMathInElement(a, { delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false });
+      });
+    }
+  });
+});
+
+// ═══════════════════════════════════════
+// MARGIN CONTROLS
+// ═══════════════════════════════════════
+function toggleMarginPanel() {
+  const panel = document.getElementById('marginPanel');
+  const btn   = document.getElementById('marginBtn');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) { panel.classList.remove('open'); return; }
+
+  // Position panel so it never goes off-screen
+  const br = btn.getBoundingClientRect();
+  const PW = 220; // panel width
+  const vw = window.innerWidth;
+
+  let left = br.left;
+  // Push left if it would overflow the right edge
+  if (left + PW > vw - 8) left = vw - PW - 8;
+  // Never go off the left edge
+  if (left < 8) left = 8;
+
+  panel.style.top  = (br.bottom + 4) + 'px';
+  panel.style.left = left + 'px';
+  panel.classList.add('open');
+}
+
+// Margin helpers — all values in inches
+function inLabel(v) { return parseFloat(v).toFixed(2).replace(/\.?0+$/, '') + '″'; }
+
+function updateMarginLabel(sliderId, labelId) {
+  document.getElementById(labelId).textContent = inLabel(document.getElementById(sliderId).value);
+}
+
+function setPresetMargin(preset) {
+  // A4 standard presets in inches
+  const presets = {
+    normal: { top:1.0,  bot:1.0,  left:1.25, right:1.25 },
+    narrow: { top:0.5,  bot:0.5,  left:0.5,  right:0.5  },
+    wide:   { top:1.5,  bot:1.5,  left:2.0,  right:2.0  },
+  };
+  const m = presets[preset];
+  ['Top','Bot','Left','Right'].forEach(k => {
+    const key = k === 'Bot' ? 'bot' : k.toLowerCase();
+    const id = 'm' + k;
+    document.getElementById(id).value = m[key];
+    document.getElementById(id + 'V').textContent = inLabel(m[key]);
+  });
+  applyMargins();
+}
+
+function applyMargins() {
+  const t = document.getElementById('mTop').value;
+  const b = document.getElementById('mBot').value;
+  const l = document.getElementById('mLeft').value;
+  const r = document.getElementById('mRight').value;
+  // Apply as inches — the browser respects in units natively
+  const padding = `${t}in ${r}in ${b}in ${l}in`;
+  document.querySelectorAll('.page').forEach(p => p.style.padding = padding);
+  // Recalc column heights on all pages after margin change
+  document.querySelectorAll('.columns-area').forEach(a => recalcColH(a));
+  setTimeout(reflowPages, 200);
+  document.getElementById('marginPanel').classList.remove('open');
+}
+</script>
+</body>
+</html>
