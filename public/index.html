@@ -1148,8 +1148,8 @@ function transformAsterisks(mode) {
 
 // ═══════════════════════════════════════
 // SAVE AS PDF
-// POSTs LaTeX source to latexonline.cc (free public API, no server needed).
-// Returns a real text-based PDF — selectable, searchable, proper LaTeX math.
+// Uses YtoTech latex-on-http API (CORS-enabled, works from any hosted site).
+// Sends LaTeX source → gets back a real text-based PDF, downloads directly.
 // ═══════════════════════════════════════
 async function savePDF() {
   const pages = [...document.querySelectorAll('.page')];
@@ -1165,72 +1165,69 @@ async function savePDF() {
     const inputs   = [...document.querySelectorAll('.info-input')];
     const [cls, subj, fm, time] = inputs.map(i => i.value || '');
 
-    // ── 2. Collect raw content from all pages ─────────────────────────
+    // ── 2. Collect raw LaTeX content from all pages ───────────────────
     const bodyContent = [...document.querySelectorAll('.columns-area')]
       .map(a => a.innerText).join('\n\n').trim();
 
     // ── 3. Build full LaTeX document ──────────────────────────────────
-    // If user already typed a full document, use it as-is.
-    // Otherwise wrap their content in a standard preamble.
+    // If the user typed a full \documentclass doc, use as-is.
+    // Otherwise wrap in a standard exam-paper preamble.
     let latexSrc;
     if (/\\documentclass/.test(bodyContent)) {
       latexSrc = bodyContent;
     } else {
-      const safeTitle   = titleTxt.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
-      const safeCls     = cls.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
-      const safeSubj    = subj.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
-      const safeFm      = fm.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
-      const safeTime    = time.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
+      // Escape special LaTeX chars in metadata fields only
+      const esc = s => s.replace(/[&%$#_{}~^\\]/g, c => c === '\\' ? '\\textbackslash{}' : '\\' + c);
+      latexSrc =
+`\\documentclass[12pt]{article}
+\\usepackage[a4paper, margin=0.8in]{geometry}
+\\usepackage{amsmath,amssymb,amsthm}
+\\usepackage[T1]{fontenc}
+\\usepackage[utf8]{inputenc}
+\\usepackage{multicol}
+\\usepackage{array,tabularx,booktabs}
+\\usepackage{enumitem}
+\\usepackage{xcolor}
+\\setlength{\\parindent}{0pt}
+\\setlength{\\parskip}{4pt}
+\\setlength{\\columnsep}{14pt}
+\\setlength{\\columnseprule}{0.4pt}
 
-      latexSrc = String.raw`\documentclass[12pt]{article}
-\usepackage[a4paper, margin=0.8in]{geometry}
-\usepackage{amsmath,amssymb,amsthm}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{multicol}
-\usepackage{array,tabularx,booktabs}
-\usepackage{enumitem}
-\usepackage{xcolor}
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{4pt}
-\setlength{\columnsep}{14pt}
-\setlength{\columnseprule}{0.4pt}
+\\begin{document}
 
-\begin{document}
+{\\centering\\Large\\textbf{${esc(titleTxt)}}\\par}
+\\vspace{4pt}
+\\noindent
+\\begin{tabular*}{\\textwidth}{@{}l@{\\extracolsep{\\fill}}r@{}}
+\\textbf{Class:} ${esc(cls)} \\quad \\textbf{Subject:} ${esc(subj)} &
+\\textbf{FM:} ${esc(fm)} \\quad \\textbf{Time:} ${esc(time)} \\\\
+\\end{tabular*}
+\\par\\vspace{2pt}\\hrule\\vspace{2pt}\\hrule\\vspace{6pt}
 
-{\centering\Large\textbf{${safeTitle}}\par}
-\vspace{4pt}
-\noindent
-\begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}}r@{}}
-\textbf{Class:} ${safeCls} \quad \textbf{Subject:} ${safeSubj} &
-\textbf{FM:} ${safeFm} \quad \textbf{Time:} ${safeTime} \\
-\end{tabular*}
-\par\vspace{2pt}\hrule\vspace{2pt}\hrule\vspace{6pt}
-
-\begin{multicols}{3}
+\\begin{multicols}{3}
 ${bodyContent}
-\end{multicols}
+\\end{multicols}
 
-\end{document}`;
+\\end{document}`;
     }
 
-    // ── 4. POST to latexonline.cc as a .tex file upload ───────────────
-    const texBlob = new Blob([latexSrc], { type: 'application/x-tex' });
-    const form    = new FormData();
-    form.append('file', texBlob, 'doc.tex');
-
-    const res = await fetch('https://latexonline.cc/compile', {
+    // ── 4. POST to YtoTech latex-on-http (CORS-enabled public API) ────
+    const res = await fetch('https://latex.ytotech.com/builds/sync', {
       method: 'POST',
-      body: form
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        compiler: 'pdflatex',
+        resources: [{ main: true, content: latexSrc }]
+      })
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      alert('LaTeX compile error from latexonline.cc:\n\n' + errText.slice(0, 800));
+      alert('LaTeX compile error:\n\n' + errText.slice(0, 1000));
       return;
     }
 
-    // ── 5. Download the real PDF ──────────────────────────────────────
+    // ── 5. Direct PDF download ────────────────────────────────────────
     const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
     const a    = Object.assign(document.createElement('a'),
@@ -1241,8 +1238,7 @@ ${bodyContent}
     setTimeout(() => URL.revokeObjectURL(url), 3000);
 
   } catch (e) {
-    alert('PDF export failed:\n' + e.message +
-          '\n\nCheck your internet connection. latexonline.cc must be reachable.');
+    alert('PDF export failed: ' + e.message);
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
   }
