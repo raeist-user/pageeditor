@@ -26,7 +26,6 @@
 <!-- DOCX export -->
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 
-
 <style>
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 :root {
@@ -1149,17 +1148,8 @@ function transformAsterisks(mode) {
 
 // ═══════════════════════════════════════
 // SAVE AS PDF
-//
-// Renders the document into a hidden off-screen iframe inside the current
-// page, waits for fonts + MathJax SVGs to settle, then calls
-// iframe.contentWindow.print().
-//
-// On Android Chrome this triggers the native print/PDF/share sheet
-// WITHOUT opening any new window or tab.
-// On desktop it opens the browser's print dialog (Save as PDF works there).
-//
-// MathJax SVG defs are inlined per-equation so they survive the new
-// document context.
+// POSTs LaTeX source to latexonline.cc (free public API, no server needed).
+// Returns a real text-based PDF — selectable, searchable, proper LaTeX math.
 // ═══════════════════════════════════════
 async function savePDF() {
   const pages = [...document.querySelectorAll('.page')];
@@ -1167,167 +1157,93 @@ async function savePDF() {
 
   const btn      = document.querySelector('[onclick="savePDF()"]');
   const origHTML = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = origHTML.replace(/Save PDF|Generating…|Compiling…|Preparing…/, 'Preparing…'); }
-
-  // Create the iframe immediately so it's in the DOM
-  const iframe = document.createElement('iframe');
-  iframe.setAttribute('aria-hidden', 'true');
-  // Off-screen but NOT display:none — must be rendered for fonts/layout
-  iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;';
-  document.body.appendChild(iframe);
+  if (btn) { btn.disabled = true; btn.innerHTML = origHTML.replace(/Save PDF|Generating…|Compiling…|Preparing…/, 'Compiling…'); }
 
   try {
     // ── 1. Collect metadata ───────────────────────────────────────────
-    const headline = document.querySelector('.headline')?.innerHTML || 'Shadab Coaching Centre';
     const titleTxt = document.querySelector('.headline')?.innerText?.trim() || 'Shadab Coaching Centre';
     const inputs   = [...document.querySelectorAll('.info-input')];
-    const [cls, subj, fm, time] = inputs.map(i => escHtml(i.value || ''));
-    const pad    = pages[0].style.padding || '0.1in';
-    const areaEl = pages[0].querySelector('.columns-area');
-    const aFont  = areaEl?.style.fontFamily || "'EB Garamond',Georgia,serif";
-    const aSize  = areaEl?.style.fontSize   || '14px';
-    const aLH    = areaEl?.style.lineHeight || '1.65';
-    const aDir   = areaEl?.dir || 'ltr';
-    const isUrdu = areaEl?.classList.contains('urdu-mode') || false;
+    const [cls, subj, fm, time] = inputs.map(i => i.value || '');
 
-    // ── 2. Inline MathJax defs per-equation ──────────────────────────
-    // MathJax SVG uses a shared <symbol> pool referenced by <use href>.
-    // Those refs break in a new document — fix by cloning the defs into
-    // every individual equation <svg> before serialising.
-    const globalDefsEl   = document.querySelector('body > svg[style*="display"]');
-    const globalDefsHTML = globalDefsEl
-      ? (globalDefsEl.querySelector('defs')?.innerHTML || globalDefsEl.innerHTML)
-      : '';
+    // ── 2. Collect raw content from all pages ─────────────────────────
+    const bodyContent = [...document.querySelectorAll('.columns-area')]
+      .map(a => a.innerText).join('\n\n').trim();
 
-    function serialiseArea(area) {
-      const clone = area.cloneNode(true);
-      if (globalDefsHTML) {
-        clone.querySelectorAll('mjx-container svg').forEach(svg => {
-          let d = svg.querySelector('defs');
-          if (!d) {
-            d = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            svg.insertBefore(d, svg.firstChild);
-          }
-          d.innerHTML = globalDefsHTML + d.innerHTML;
-        });
-      }
-      return clone.innerHTML;
+    // ── 3. Build full LaTeX document ──────────────────────────────────
+    // If user already typed a full document, use it as-is.
+    // Otherwise wrap their content in a standard preamble.
+    let latexSrc;
+    if (/\\documentclass/.test(bodyContent)) {
+      latexSrc = bodyContent;
+    } else {
+      const safeTitle   = titleTxt.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
+      const safeCls     = cls.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
+      const safeSubj    = subj.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
+      const safeFm      = fm.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
+      const safeTime    = time.replace(/[&%$#_{}~^\\]/g, s => '\\' + s);
+
+      latexSrc = String.raw`\documentclass[12pt]{article}
+\usepackage[a4paper, margin=0.8in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{array,tabularx,booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlength{\columnsep}{14pt}
+\setlength{\columnseprule}{0.4pt}
+
+\begin{document}
+
+{\centering\Large\textbf{${safeTitle}}\par}
+\vspace{4pt}
+\noindent
+\begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}}r@{}}
+\textbf{Class:} ${safeCls} \quad \textbf{Subject:} ${safeSubj} &
+\textbf{FM:} ${safeFm} \quad \textbf{Time:} ${safeTime} \\
+\end{tabular*}
+\par\vspace{2pt}\hrule\vspace{2pt}\hrule\vspace{6pt}
+
+\begin{multicols}{3}
+${bodyContent}
+\end{multicols}
+
+\end{document}`;
     }
 
-    // ── 3. Build page HTML ────────────────────────────────────────────
-    function buildPageHTML(pg, idx) {
-      const area  = pg.querySelector('.columns-area');
-      const aHTML = area ? serialiseArea(area) : '';
-      if (idx === 0) {
-        const divs = [...pg.querySelectorAll('.page-divider')]
-          .map(h => `<hr class="${h.className}">`).join('');
-        return `<div class="page">
-          <div class="page-header"><div class="headline">${headline}</div></div>
-          <div class="info-row">
-            <div class="info-left">
-              <div class="info-field"><label>Class:</label><span class="info-val">${cls}</span></div>
-              <div class="info-field"><label>Subject:</label><span class="info-val">${subj}</span></div>
-            </div>
-            <div class="info-right">
-              <div class="info-field"><label>FM:</label><span class="info-val">${fm}</span></div>
-              <div class="info-field"><label>Time:</label><span class="info-val">${time}</span></div>
-            </div>
-          </div>
-          ${divs || '<hr class="page-divider"><hr class="page-divider thin">'}
-          <div class="columns-area">${aHTML}</div>
-        </div>`;
-      }
-      return `<div class="page">
-        <div class="cont-label">— continued —</div>
-        <div class="columns-area">${aHTML}</div>
-      </div>`;
-    }
+    // ── 4. POST to latexonline.cc as a .tex file upload ───────────────
+    const texBlob = new Blob([latexSrc], { type: 'application/x-tex' });
+    const form    = new FormData();
+    form.append('file', texBlob, 'doc.tex');
 
-    const allPagesHTML = pages.map((pg, i) => buildPageHTML(pg, i)).join('\n');
-
-    // ── 4. Carry stylesheets + MathJax runtime CSS ────────────────────
-    const externalLinks = [...document.head.querySelectorAll('link[rel="stylesheet"]')]
-      .map(l => `<link rel="stylesheet" href="${l.href}">`).join('\n');
-    const mjxStyles = [...document.head.querySelectorAll('style')]
-      .map(s => `<style>${s.textContent}</style>`).join('\n');
-
-    // ── 5. Build print CSS ────────────────────────────────────────────
-    const printCSS = `
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { background: #fff; }
-      .page {
-        width: 210mm; min-height: 297mm; padding: ${pad};
-        background: #fff;
-        page-break-after: always; break-after: page;
-        overflow: visible;
-        font-size: 11pt; line-height: 1.5; color: #111;
-      }
-      .page:last-child { page-break-after: avoid; break-after: avoid; }
-      .page-header { text-align: center; margin-bottom: 4px; }
-      .headline { font-family: 'EB Garamond', serif; font-size: 15pt; font-weight: 700;
-        letter-spacing: .5px; color: #111; line-height: 1.15; margin-bottom: 3px; }
-      .info-row { display: flex; align-items: flex-start; justify-content: space-between;
-        gap: 12px; margin-bottom: 6px; font-family: 'Nunito Sans', sans-serif; font-size: 9.5pt; }
-      .info-left, .info-right { display: flex; flex-direction: column; gap: 4px; }
-      .info-field { display: flex; align-items: center; gap: 6px; }
-      .info-field label { font-weight: 700; color: #222; min-width: 48px; font-size: 9pt; }
-      .info-val { font-family: 'EB Garamond', serif; font-size: 10pt; color: #111;
-        border-bottom: 1.5px solid #555; min-width: 80px; padding: 1px 2px; display: inline-block; }
-      .page-divider { border: none; border-top: 2px solid #222; margin: 6px 0 8px; }
-      .page-divider.thin { border-top-width: 1px; border-top-color: #999; margin: 3px 0 8px; }
-      .cont-label { font-size: 10pt; font-family: 'EB Garamond', serif; color: #888;
-        text-align: center; margin-bottom: 6px; font-style: italic; }
-      .columns-area {
-        column-count: 3; column-gap: 14px;
-        column-rule: 1px solid #ccc; column-fill: auto;
-        overflow: visible;
-        font-family: ${aFont}; font-size: ${aSize}; line-height: ${aLH};
-        color: #111; word-break: break-word;
-        text-align: ${isUrdu ? 'right' : 'justify'}; direction: ${aDir};
-      }
-      .columns-area div, .columns-area p { margin: 0; }
-      b, strong { font-weight: 700; } i, em { font-style: italic; } u { text-decoration: underline; }
-      hr { border: none; border-top: 1px solid #aaa; margin: 4px 0; }
-      ol { margin: 2px 0 2px 18px; padding: 0; } ul { margin: 2px 0 2px 18px; padding: 0; }
-      mjx-container { display: inline-block !important; vertical-align: middle; }
-      mjx-container svg { overflow: visible; }
-      @page { size: A4; margin: 0; }
-    `;
-
-    // ── 6. Write into the hidden iframe ──────────────────────────────
-    const printHTML = `<!DOCTYPE html>
-<html lang="${isUrdu ? 'ur' : 'en'}">
-<head>
-  <meta charset="UTF-8">
-  <title>${titleTxt}</title>
-  ${externalLinks}
-  ${mjxStyles}
-  <style>${printCSS}</style>
-</head>
-<body>${allPagesHTML}</body>
-</html>`;
-
-    await new Promise(resolve => {
-      iframe.onload = resolve;
-      iframe.srcdoc = printHTML;
+    const res = await fetch('https://latexonline.cc/compile', {
+      method: 'POST',
+      body: form
     });
 
-    // Wait for all fonts inside the iframe to finish loading
-    await iframe.contentDocument.fonts.ready;
-    // Extra settle time for CSS columns and MathJax SVG layout
-    await new Promise(r => setTimeout(r, 600));
+    if (!res.ok) {
+      const errText = await res.text();
+      alert('LaTeX compile error from latexonline.cc:\n\n' + errText.slice(0, 800));
+      return;
+    }
 
-    // ── 7. Print from the iframe ──────────────────────────────────────
-    // On Android / iOS Chrome this triggers the native share/save-to-PDF
-    // sheet WITHOUT a canvas render — no main-thread freeze.
-    // On desktop it opens the browser print dialog where "Save as PDF" works.
-    iframe.contentWindow.print();
+    // ── 5. Download the real PDF ──────────────────────────────────────
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'),
+                   { href: url, download: titleTxt + '.pdf' });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
 
+  } catch (e) {
+    alert('PDF export failed:\n' + e.message +
+          '\n\nCheck your internet connection. latexonline.cc must be reachable.');
   } finally {
-    // Remove iframe after a short delay so the print job can initiate
-    setTimeout(() => {
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-    }, 2000);
     if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
   }
 }
