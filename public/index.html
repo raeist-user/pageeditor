@@ -25,6 +25,9 @@
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 <!-- DOCX export -->
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<!-- pdfmake — textual PDF download with SVG math support -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
 
 <style>
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
@@ -1147,100 +1150,268 @@ function transformAsterisks(mode) {
 }
 
 // ═══════════════════════════════════════
-// SAVE AS PDF
-// Uses YtoTech latex-on-http API (CORS-enabled, works from any hosted site).
-// Sends LaTeX source → gets back a real text-based PDF, downloads directly.
+// SAVE AS PDF  — pdfmake textual download
+//
+// Generates a genuine textual PDF (selectable text + vector SVG math)
+// and triggers a direct browser download — no print dialog, no iframe,
+// no rasterisation.
+//
+// • Regular text → pdfmake text runs (Times Roman, searchable)
+// • Bold / Italic / Underline → preserved as PDF font attributes
+// • MathJax equations → MathJax global defs are cloned into each <svg>,
+//   then the SVG string is embedded via pdfmake's native svg{} type
+//   (stored as vector, NOT as a pixel image)
+// • 3-column layout → pdfmake columns[] with three equal stacks;
+//   content is balanced across the three stacks by block count
+// • Multi-page documents → each continuation page adds a fresh
+//   three-column section after a pdfmake pageBreak
 // ═══════════════════════════════════════
 async function savePDF() {
+  if (typeof pdfMake === 'undefined') {
+    alert('PDF library is still loading — please try again in a moment.');
+    return;
+  }
+
   const pages = [...document.querySelectorAll('.page')];
   if (!pages.length) { alert('Nothing to export.'); return; }
 
-  const btn      = document.querySelector('[onclick="savePDF()"]');
-  const origHTML = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = origHTML.replace(/Save PDF|Generating…|Compiling…|Preparing…/, 'Compiling…'); }
+  // Disable every Save-PDF trigger while generating
+  const btns     = [...document.querySelectorAll('[onclick="savePDF()"]')];
+  const origHTMs = btns.map(b => b.innerHTML);
+  btns.forEach(b => {
+    b.disabled = true;
+    b.innerHTML = b.innerHTML.replace(/Save PDF|Generating.*|Preparing.*/, 'Generating…');
+  });
 
   try {
-    // ── 1. Collect metadata ───────────────────────────────────────────
+    // ── 1. Metadata ─────────────────────────────────────────────────
     const titleTxt = document.querySelector('.headline')?.innerText?.trim() || 'Shadab Coaching Centre';
     const inputs   = [...document.querySelectorAll('.info-input')];
     const [cls, subj, fm, time] = inputs.map(i => i.value || '');
+    const areaEl   = document.getElementById('columnsArea');
+    const isUrdu   = areaEl?.classList.contains('urdu-mode') || false;
 
-    // ── 2. Collect raw LaTeX content from all pages ───────────────────
-    const bodyContent = [...document.querySelectorAll('.columns-area')]
-      .map(a => a.innerText).join('\n\n').trim();
+    // ── 2. Collect MathJax global defs once ─────────────────────────
+    // MathJax SVG uses shared <symbol> defs referenced via <use href>.
+    // We clone those defs into every equation SVG so the standalone
+    // SVG strings are self-contained and render correctly in pdfmake.
+    const globalDefsEl   = document.querySelector('body > svg[style*="display"]');
+    const globalDefsHTML = globalDefsEl
+      ? (globalDefsEl.querySelector('defs')?.innerHTML || globalDefsEl.innerHTML)
+      : '';
 
-    // ── 3. Build full LaTeX document ──────────────────────────────────
-    // If the user typed a full \documentclass doc, use as-is.
-    // Otherwise wrap in a standard exam-paper preamble.
-    let latexSrc;
-    if (/\\documentclass/.test(bodyContent)) {
-      latexSrc = bodyContent;
-    } else {
-      // Escape special LaTeX chars in metadata fields only
-      const esc = s => s.replace(/[&%$#_{}~^\\]/g, c => c === '\\' ? '\\textbackslash{}' : '\\' + c);
-      latexSrc =
-`\\documentclass[12pt]{article}
-\\usepackage[a4paper, margin=0.8in]{geometry}
-\\usepackage{amsmath,amssymb,amsthm}
-\\usepackage[T1]{fontenc}
-\\usepackage[utf8]{inputenc}
-\\usepackage{multicol}
-\\usepackage{array,tabularx,booktabs}
-\\usepackage{enumitem}
-\\usepackage{xcolor}
-\\setlength{\\parindent}{0pt}
-\\setlength{\\parskip}{4pt}
-\\setlength{\\columnsep}{14pt}
-\\setlength{\\columnseprule}{0.4pt}
+    // ── 3. DOM → pdfmake item converter ─────────────────────────────
+    // Returns a pdfmake content object or null.
+    // inheritStyle carries bold/italics/decoration down into children.
+    function nodeToItem(node, inheritStyle) {
+      if (node.nodeType === 3) {
+        const t = node.textContent;
+        if (!t) return null;
+        return Object.keys(inheritStyle).length ? { text: t, ...inheritStyle } : { text: t };
+      }
+      if (node.nodeType !== 1) return null;
 
-\\begin{document}
+      const tag = node.tagName.toLowerCase();
 
-{\\centering\\Large\\textbf{${esc(titleTxt)}}\\par}
-\\vspace{4pt}
-\\noindent
-\\begin{tabular*}{\\textwidth}{@{}l@{\\extracolsep{\\fill}}r@{}}
-\\textbf{Class:} ${esc(cls)} \\quad \\textbf{Subject:} ${esc(subj)} &
-\\textbf{FM:} ${esc(fm)} \\quad \\textbf{Time:} ${esc(time)} \\\\
-\\end{tabular*}
-\\par\\vspace{2pt}\\hrule\\vspace{2pt}\\hrule\\vspace{6pt}
+      // ── MathJax SVG equation ──────────────────────────────────────
+      if (tag === 'mjx-container') {
+        const svgEl = node.querySelector('svg');
+        if (svgEl) {
+          try {
+            const cloned = svgEl.cloneNode(true);
+            // Inline global defs so the SVG is self-contained
+            if (globalDefsHTML) {
+              let defs = cloned.querySelector('defs');
+              if (!defs) {
+                defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                cloned.insertBefore(defs, cloned.firstChild);
+              }
+              defs.innerHTML = globalDefsHTML + defs.innerHTML;
+            }
+            cloned.setAttribute('xmlns',       'http://www.w3.org/2000/svg');
+            cloned.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+            const svgStr = new XMLSerializer().serializeToString(cloned);
+            // Measure at true (unzoomed) size
+            const rect  = svgEl.getBoundingClientRect();
+            const rawW  = (rect.width  || 80)  / currentZoom;
+            const rawH  = (rect.height || 16)  / currentZoom;
+            // Cap to column width (≈155 pt at standard margins)
+            const MAX_W = 150;
+            const scale = rawW > MAX_W ? MAX_W / rawW : 1;
+            const fitW  = Math.round(rawW * scale);
+            const fitH  = Math.round(rawH * scale);
+            return { svg: svgStr, width: fitW, height: fitH, margin: [0, 1, 0, 1] };
+          } catch (_) { /* fall through to text fallback */ }
+        }
+        return { text: node.innerText || '' };
+      }
 
-\\begin{multicols}{3}
-${bodyContent}
-\\end{multicols}
+      // ── Horizontal rule ───────────────────────────────────────────
+      if (tag === 'hr') {
+        return {
+          canvas: [{ type: 'line', x1: 0, y1: 2, x2: 155, y2: 2,
+                     lineWidth: 0.5, lineColor: '#aaa' }],
+          margin: [0, 2, 0, 2]
+        };
+      }
 
-\\end{document}`;
+      if (tag === 'br') return { text: '\n' };
+
+      // ── Propagate inline styles ───────────────────────────────────
+      const myStyle = { ...inheritStyle };
+      if (['b','strong'].includes(tag))    myStyle.bold       = true;
+      if (['i','em'].includes(tag))        myStyle.italics    = true;
+      if (tag === 'u')                     myStyle.decoration = 'underline';
+      if (tag === 'code' || tag === 'pre') myStyle.font       = 'Courier';
+
+      // ── Block-level containers ────────────────────────────────────
+      if (['div','p','li'].includes(tag)) {
+        const hasMathChild  = !!node.querySelector('mjx-container');
+        const hasStyleChild = !!node.querySelector('b,strong,i,em,u,code');
+
+        if (hasMathChild || hasStyleChild || node.childNodes.length > 1) {
+          const items = [];
+          for (const child of node.childNodes) {
+            const item = nodeToItem(child, myStyle);
+            if (item !== null) items.push(item);
+          }
+          if (!items.length) return { text: '' };
+          // pdfmake cannot mix svg{} inline with text{} in the same text[]
+          // array — if any child is an SVG, wrap everything in a stack.
+          const hasSvgChild = items.some(it => 'svg' in it);
+          if (hasSvgChild) return { stack: items, margin: [0, 0, 0, 0] };
+          return { text: items, margin: [0, 0, 0, 0] };
+        }
+
+        const t = node.innerText;
+        if (!t) return { text: '' };
+        return Object.keys(myStyle).length
+          ? { text: t, ...myStyle, margin: [0, 0, 0, 0] }
+          : { text: t, margin: [0, 0, 0, 0] };
+      }
+
+      // ── Lists ─────────────────────────────────────────────────────
+      if (tag === 'ol' || tag === 'ul') {
+        const lis = [...node.querySelectorAll(':scope > li')].map(li => ({ text: li.innerText }));
+        return lis.length ? (tag === 'ol' ? { ol: lis } : { ul: lis }) : null;
+      }
+
+      // ── Any other inline element — extract styled text ────────────
+      const t = node.innerText;
+      if (!t) return null;
+      return Object.keys(myStyle).length ? { text: t, ...myStyle } : { text: t };
     }
 
-    // ── 4. POST to YtoTech latex-on-http (CORS-enabled public API) ────
-    const res = await fetch('https://latex.ytotech.com/builds/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        compiler: 'pdflatex',
-        resources: [{ main: true, content: latexSrc }]
-      })
+    // ── 4. Parse one .columns-area into a flat block array ──────────
+    function parseArea(area) {
+      const blocks = [];
+      for (const child of area.childNodes) {
+        const item = nodeToItem(child, {});
+        if (item !== null) blocks.push(item);
+      }
+      return blocks;
+    }
+
+    // ── 5. Gather all blocks from every page ─────────────────────────
+    const allBlocks = [];
+    document.querySelectorAll('.columns-area').forEach(a => {
+      allBlocks.push(...parseArea(a));
     });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      alert('LaTeX compile error:\n\n' + errText.slice(0, 1000));
-      return;
-    }
+    // ── 6. Balance blocks across 3 columns ───────────────────────────
+    // Split by block count (close enough for typical exam content).
+    const third = Math.ceil(allBlocks.length / 3);
+    const col1  = allBlocks.slice(0, third);
+    const col2  = allBlocks.slice(third, third * 2);
+    const col3  = allBlocks.slice(third * 2);
 
-    // ── 5. Direct PDF download ────────────────────────────────────────
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = Object.assign(document.createElement('a'),
-                   { href: url, download: titleTxt + '.pdf' });
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    const emptyCol = [{ text: '' }];
 
-  } catch (e) {
-    alert('PDF export failed: ' + e.message);
+    // ── 7. Build pdfmake document definition ─────────────────────────
+    const docDef = {
+      pageSize:    'A4',
+      pageMargins: [28, 28, 28, 28],   // ≈10 mm each side
+      info: { title: titleTxt, author: 'Shadab Coaching Centre' },
+
+      content: [
+        // Header — title
+        {
+          text: titleTxt,
+          fontSize: 14, bold: true,
+          alignment: 'center',
+          margin: [0, 0, 0, 3]
+        },
+        // Header — info row (Class/Subject left, FM/Time right)
+        {
+          columns: [
+            {
+              stack: [
+                { text: [{ text: 'Class: ',   bold: true, fontSize: 8.5 },
+                          { text: cls,                    fontSize: 9   }] },
+                { text: [{ text: 'Subject: ', bold: true, fontSize: 8.5 },
+                          { text: subj,                   fontSize: 9   }] }
+              ],
+              width: '*'
+            },
+            {
+              stack: [
+                { text: [{ text: 'FM: ',   bold: true, fontSize: 8.5 },
+                          { text: fm,                  fontSize: 9   }] },
+                { text: [{ text: 'Time: ', bold: true, fontSize: 8.5 },
+                          { text: time,                fontSize: 9   }] }
+              ],
+              width: '*',
+              alignment: 'right'
+            }
+          ],
+          columnGap: 10,
+          margin: [0, 2, 0, 3]
+        },
+        // Thick rule
+        {
+          canvas: [{
+            type: 'line', x1: 0, y1: 0, x2: 537, y2: 0,
+            lineWidth: 2, lineColor: '#222'
+          }],
+          margin: [0, 0, 0, 2]
+        },
+        // Thin rule
+        {
+          canvas: [{
+            type: 'line', x1: 0, y1: 0, x2: 537, y2: 0,
+            lineWidth: 0.5, lineColor: '#999'
+          }],
+          margin: [0, 0, 0, 5]
+        },
+        // 3-column content body
+        {
+          columns: [
+            { stack: col1.length ? col1 : emptyCol, width: '*' },
+            { stack: col2.length ? col2 : emptyCol, width: '*' },
+            { stack: col3.length ? col3 : emptyCol, width: '*' }
+          ],
+          columnGap: 10
+        }
+      ],
+
+      defaultStyle: {
+        font:        'Times',
+        fontSize:    9.5,
+        lineHeight:  1.5,
+        alignment:   isUrdu ? 'right' : 'justify'
+      }
+    };
+
+    // ── 8. Download ───────────────────────────────────────────────────
+    pdfMake.createPdf(docDef).download(`${titleTxt}.pdf`);
+
+  } catch (err) {
+    console.error('savePDF error:', err);
+    alert('PDF generation failed:\n' + err.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
+    setTimeout(() => {
+      btns.forEach((b, i) => { b.disabled = false; b.innerHTML = origHTMs[i]; });
+    }, 1500);
   }
 }
 
