@@ -5,27 +5,83 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shadab Page Editor</title>
 
-<!-- Fonts — loaded from ../fonts/ folder -->
-<style>
-/* ── EB Garamond ── */
-@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:400; src:url('../fonts/EBGaramond-Regular.ttf') format('truetype'),url('../fonts/EBGaramond-Regular.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:italic; font-weight:400; src:url('../fonts/EBGaramond-Italic.ttf') format('truetype'),url('../fonts/EBGaramond-Italic.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:500; src:url('../fonts/EBGaramond-Medium.ttf') format('truetype'),url('../fonts/EBGaramond-Medium.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:600; src:url('../fonts/EBGaramond-SemiBold.ttf') format('truetype'),url('../fonts/EBGaramond-SemiBold.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:700; src:url('../fonts/EBGaramond-Bold.ttf') format('truetype'),url('../fonts/EBGaramond-Bold.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:italic; font-weight:700; src:url('../fonts/EBGaramond-BoldItalic.ttf') format('truetype'),url('../fonts/EBGaramond-BoldItalic.woff2') format('woff2'); }
-/* ── JetBrains Mono ── */
-@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:400; src:url('../fonts/JetBrainsMono-Regular.ttf') format('truetype'),url('../fonts/JetBrainsMono-Regular.woff2') format('woff2'); }
-@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:500; src:url('../fonts/JetBrainsMono-Medium.ttf') format('truetype'),url('../fonts/JetBrainsMono-Medium.woff2') format('woff2'); }
-/* ── Nunito Sans ── */
-@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:300; src:url('../fonts/NunitoSans-Light.ttf') format('truetype'),url('../fonts/NunitoSans-Light.woff2') format('woff2'); }
-@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:400; src:url('../fonts/NunitoSans-Regular.ttf') format('truetype'),url('../fonts/NunitoSans-Regular.woff2') format('woff2'); }
-@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:600; src:url('../fonts/NunitoSans-SemiBold.ttf') format('truetype'),url('../fonts/NunitoSans-SemiBold.woff2') format('woff2'); }
-@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:700; src:url('../fonts/NunitoSans-Bold.ttf') format('truetype'),url('../fonts/NunitoSans-Bold.woff2') format('woff2'); }
-/* ── Jameel Noori Nastaliq (Urdu) ── */
-@font-face { font-family:'JameelNooriNastaliq'; font-style:normal; font-weight:400; src:url('../fonts/Jameel Noori Nastaleeq.ttf') format('truetype'); }
+<!-- Fonts — loaded from GitHub repo via token -->
+<style id="fontFaceStyle">
+/* fonts injected by loadFontsFromGitHub() below */
 </style>
-<!-- Jameel Noori loaded from ../fonts/ folder -->
+<script>
+// ═══════════════════════════════════════
+// GITHUB FONT LOADER
+// Set your repo details and token below
+// ═══════════════════════════════════════
+const GITHUB_TOKEN = '';           // ← paste your GitHub token here
+const GITHUB_USER  = '';           // ← your GitHub username  e.g. 'shadab'
+const GITHUB_REPO  = '';           // ← your repo name        e.g. 'page-editor'
+const GITHUB_BRANCH = 'main';
+
+const FONTS = [
+  // English fonts
+  { family:'EB Garamond', weight:400, style:'normal',  file:'EBGaramond-Regular.ttf'   },
+  { family:'EB Garamond', weight:400, style:'italic',  file:'EBGaramond-Italic.ttf'    },
+  { family:'EB Garamond', weight:500, style:'normal',  file:'EBGaramond-Medium.ttf'    },
+  { family:'EB Garamond', weight:600, style:'normal',  file:'EBGaramond-SemiBold.ttf'  },
+  { family:'EB Garamond', weight:700, style:'normal',  file:'EBGaramond-Bold.ttf'      },
+  { family:'EB Garamond', weight:700, style:'italic',  file:'EBGaramond-BoldItalic.ttf'},
+  { family:'JetBrains Mono', weight:400, style:'normal', file:'JetBrainsMono-Regular.ttf'},
+  { family:'JetBrains Mono', weight:500, style:'normal', file:'JetBrainsMono-Medium.ttf' },
+  { family:'Nunito Sans', weight:300, style:'normal',  file:'NunitoSans-Light.ttf'     },
+  { family:'Nunito Sans', weight:400, style:'normal',  file:'NunitoSans-Regular.ttf'   },
+  { family:'Nunito Sans', weight:600, style:'normal',  file:'NunitoSans-SemiBold.ttf'  },
+  { family:'Nunito Sans', weight:700, style:'normal',  file:'NunitoSans-Bold.ttf'      },
+  // Urdu font
+  { family:'JameelNooriNastaliq', weight:400, style:'normal', file:'Jameel Noori Nastaleeq.ttf' },
+];
+
+async function loadFontsFromGitHub() {
+  // If no token/repo set, fall back to relative ../fonts/ path
+  if (!GITHUB_TOKEN || !GITHUB_USER || !GITHUB_REPO) {
+    const css = FONTS.map(f =>
+      `@font-face { font-family:'${f.family}'; font-style:${f.style}; font-weight:${f.weight};` +
+      ` src:url('../fonts/${f.file}') format('truetype'); }`
+    ).join('\n');
+    document.getElementById('fontFaceStyle').textContent = css;
+    return;
+  }
+
+  const base = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/fonts/`;
+  const headers = {
+    'Authorization': 'token ' + GITHUB_TOKEN,
+    'Accept': 'application/vnd.github.v3.raw'
+  };
+
+  const results = await Promise.allSettled(
+    FONTS.map(async f => {
+      const url = base + encodeURIComponent(f.file) + '?ref=' + GITHUB_BRANCH;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error(f.file + ' not found');
+      const blob   = await res.blob();
+      const b64    = await new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result); // data:font/...;base64,...
+        r.readAsDataURL(blob);
+      });
+      return { ...f, b64 };
+    })
+  );
+
+  const css = results.map((r, i) => {
+    const f = FONTS[i];
+    const src = r.status === 'fulfilled'
+      ? `url('${r.value.b64}') format('truetype')`
+      : `url('../fonts/${f.file}') format('truetype')`; // local fallback
+    return `@font-face { font-family:'${f.family}'; font-style:${f.style}; font-weight:${f.weight}; src:${src}; }`;
+  }).join('\n');
+
+  document.getElementById('fontFaceStyle').textContent = css;
+}
+
+loadFontsFromGitHub();
+</script>
 <!-- MathJax (LaTeX rendering) -->
 <script>
   window.MathJax = {
