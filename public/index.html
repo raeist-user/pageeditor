@@ -11,15 +11,17 @@
 const GITHUB_USER   = 'raeist-user';
 const GITHUB_REPO   = 'pageeditor';
 const GITHUB_BRANCH = 'main';
-const GITHUB_TOKEN  = 'GITHUB_TOKEN_PLACEHOLDER';
+const GITHUB_TOKEN  = '';
 
-let _fontsSynced = false;
+const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/fonts/`;
+
+let _fontsSynced  = false;
 let _fontsSyncing = false;
 
 function familyFromFile(name) {
   const base = name.replace(/\.(ttf|otf|woff2?)$/i, '');
   const weightWords = /^(regular|bold|italic|medium|light|semibold|extrabold|thin|black|bolditalic)$/i;
-  const parts = base.split(/[-_]/).filter(p => !weightWords.test(p));
+  const parts = base.split(/[-_ ]/).filter(p => !weightWords.test(p));
   return parts.join(' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
 }
 function styleFromFile(name)  { return /italic/i.test(name) ? 'italic' : 'normal'; }
@@ -62,45 +64,24 @@ async function syncFonts(force) {
     const fontFiles = files.filter(f =>
       f.type === 'file' && /\.(ttf|otf|woff2?)$/i.test(f.name)
     );
-    if (!fontFiles.length) throw new Error('No font files found in fonts/');
+    if (!fontFiles.length) throw new Error('No font files in fonts/');
 
-    const results = await Promise.allSettled(
-      fontFiles.map(async f => {
-        const r = await fetch(f.download_url, {
-          headers: GITHUB_TOKEN ? { 'Authorization': 'token ' + GITHUB_TOKEN } : {}
-        });
-        if (!r.ok) throw new Error(f.name + ' HTTP ' + r.status);
-        const blob = await r.blob();
-        const b64  = await new Promise(ok => {
-          const fr = new FileReader();
-          fr.onload = () => ok(fr.result);
-          fr.readAsDataURL(blob);
-        });
-        return {
-          name  : f.name,
-          family: familyFromFile(f.name),
-          style : styleFromFile(f.name),
-          weight: weightFromFile(f.name),
-          format: formatFromFile(f.name),
-          b64
-        };
-      })
-    );
-
-    const css = results.map(r => {
-      if (r.status === 'rejected') return '';
-      const { family, style, weight, format, b64 } = r.value;
-      return `@font-face{font-family:'${family}';font-style:${style};font-weight:${weight};src:url('${b64}') format('${format}');}`;
-    }).filter(Boolean).join('\n');
+    // Use raw URL directly in @font-face — no base64 conversion needed
+    const css = fontFiles.map(f => {
+      const url    = RAW_BASE + encodeURIComponent(f.name);
+      const family = familyFromFile(f.name);
+      const style  = styleFromFile(f.name);
+      const weight = weightFromFile(f.name);
+      const format = formatFromFile(f.name);
+      return `@font-face{font-family:'${family}';font-style:${style};font-weight:${weight};src:url('${url}') format('${format}');}`;
+    }).join('\n');
 
     document.getElementById('fontFaceStyle').textContent = css;
 
-    // Rebuild dropdown
     const seen = new Set();
     select.innerHTML = '<option value="">— select —</option>';
-    results.forEach(r => {
-      if (r.status !== 'fulfilled') return;
-      const fam = r.value.family;
+    fontFiles.forEach(f => {
+      const fam = familyFromFile(f.name);
       if (seen.has(fam)) return;
       seen.add(fam);
       const opt = document.createElement('option');
@@ -231,8 +212,8 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 /* RTL Urdu mode */
 .columns-area.urdu-mode {
   direction:rtl; text-align:right;
-  font-family:JameelNooriNastaliq,'Nastaliq',serif;
-  font-size:20px; line-height:2.4;
+  font-family:'JNN','JameelNooriNastaliq',serif;
+  line-height:2.2;
 }
 .urdu-mode div,.urdu-mode p { direction:rtl; unicode-bidi:embed; }
 
@@ -481,9 +462,49 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   <div class="mf-sep"></div>
   <button class="mf-btn" onclick="transformNumbers('bold')" title="Bold text after numbered lines (1. Question)"><b>1.</b></button>
   <div class="mf-sep"></div>
-  <button class="mf-btn" onclick="removeEmptyLines()" title="Remove empty blank lines">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><line x1="5" y1="2" x2="19" y2="2" stroke-dasharray="2 2" stroke-width="1.5" stroke="#aaa"/><line x1="5" y1="9" x2="19" y2="9" stroke-dasharray="2 2" stroke-width="1.5" stroke="#aaa"/></svg>
-  </button>
+  <div class="mp-wrap" id="spacingWrap">
+    <button class="mf-btn" id="spacingBtn"
+      title="Tap: remove empty lines  |  Hold: adjust line spacing"
+      onmousedown="spacingPressStart(event)" onmouseup="spacingPressEnd(event)" onmouseleave="spacingPressCancel()"
+      ontouchstart="spacingPressStart(event)" ontouchend="spacingPressEnd(event)" ontouchcancel="spacingPressCancel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><line x1="5" y1="2" x2="19" y2="2" stroke-dasharray="2 2" stroke-width="1.5" stroke="#aaa"/><line x1="5" y1="9" x2="19" y2="9" stroke-dasharray="2 2" stroke-width="1.5" stroke="#aaa"/></svg>
+    </button>
+    <!-- Spacing panel (shown on long press) -->
+    <div class="margin-panel" id="spacingPanel" style="width:210px;">
+      <h4>↕ Text Spacing</h4>
+      <div class="mp-row">
+        <label>Line</label>
+        <input type="range" id="lineHeightSlider" min="1" max="4" step="0.05" value="1.65"
+          oninput="applyLineHeight(this.value); document.getElementById('lineHeightVal').textContent=parseFloat(this.value).toFixed(2)">
+        <span class="mp-val" id="lineHeightVal">1.65</span>
+      </div>
+      <div class="mp-row">
+        <label>Para</label>
+        <input type="range" id="paraSpaceSlider" min="0" max="24" step="1" value="0"
+          oninput="applyParaSpace(this.value); document.getElementById('paraSpaceVal').textContent=this.value+'px'">
+        <span class="mp-val" id="paraSpaceVal">0px</span>
+      </div>
+      <div class="mp-row">
+        <label>Letter</label>
+        <input type="range" id="letterSpaceSlider" min="-2" max="10" step="0.1" value="0"
+          oninput="applyLetterSpacing(this.value); document.getElementById('letterSpaceVal').textContent=parseFloat(this.value).toFixed(1)+'px'">
+        <span class="mp-val" id="letterSpaceVal">0px</span>
+      </div>
+      <div class="mp-row">
+        <label>Word</label>
+        <input type="range" id="wordSpaceSlider" min="-2" max="20" step="0.5" value="0"
+          oninput="applyWordSpacing(this.value); document.getElementById('wordSpaceVal').textContent=parseFloat(this.value).toFixed(1)+'px'">
+        <span class="mp-val" id="wordSpaceVal">0px</span>
+      </div>
+      <div class="mp-row">
+        <label>Indent</label>
+        <input type="range" id="indentSlider" min="0" max="40" step="1" value="0"
+          oninput="applyIndent(this.value); document.getElementById('indentVal').textContent=this.value+'px'">
+        <span class="mp-val" id="indentVal">0px</span>
+      </div>
+      <button class="mp-apply" onclick="resetSpacing()">Reset All</button>
+    </div>
+  </div>
 </div>
 
 </div><!-- /toolbar-area -->
@@ -885,10 +906,10 @@ function applyFont(f) {
   });
 }
 function applyFontSize(s) {
-  // Store as px — pixel-accurate sizes (1pt = 96/72 px)
   const px = (parseFloat(s) * 96 / 72).toFixed(2).replace(/\.?0+$/, '') + 'px';
+  // Apply to ALL areas including urdu-mode — size should always work
   document.querySelectorAll('.columns-area').forEach(a => {
-    if (!a.classList.contains('urdu-mode')) a.style.fontSize = px;
+    a.style.fontSize = px;
   });
   setTimeout(reflowPages, 300);
 }
@@ -897,24 +918,19 @@ function applyFontSize(s) {
 // URDU RTL MODE
 // ═══════════════════════════════════════
 let urduMode = false;
-// Jameel Noori is loaded via CDN <link> in <head> — no manual FontFace needed
+let _prevFont = ''; // store font before urdu activated
 
-const URDU_FONT = "JameelNooriNastaliq, 'Nastaliq', serif";
-const URDU_SIZE = '20px';  // ≈ 15pt → px
-const URDU_LH   = '2.4';
+const URDU_FONT = "'JNN', 'JameelNooriNastaliq', serif";
 
 function applyUrduToArea(a) {
   a.classList.add('urdu-mode');
   a.style.fontFamily = URDU_FONT;
-  a.style.fontSize   = URDU_SIZE;
-  a.style.lineHeight = URDU_LH;
+  a.style.lineHeight = '2.2';
   a.dir = 'rtl';
 }
 function removeUrduFromArea(a) {
   a.classList.remove('urdu-mode');
-  a.style.fontFamily = '';
-  const ptVal = parseFloat(document.getElementById('fontSize').value) || 10;
-  a.style.fontSize = (ptVal * 96 / 72).toFixed(2).replace(/\.?0+$/, '') + 'px';
+  a.style.fontFamily = _prevFont || '';
   a.style.lineHeight = '';
   a.dir = 'ltr';
 }
@@ -922,8 +938,39 @@ function removeUrduFromArea(a) {
 function toggleUrdu() {
   urduMode = !urduMode;
 
+  const sel = document.getElementById('fontFamily');
+
+  if (urduMode) {
+    // Save current font before switching
+    _prevFont = sel.value || '';
+
+    // Ensure JNN option exists in dropdown
+    if (!sel.querySelector('option[value*="JNN"]')) {
+      const opt = document.createElement('option');
+      opt.value = "'JNN',serif";
+      opt.textContent = 'JNN';
+      sel.appendChild(opt);
+    }
+    sel.value = "'JNN',serif";
+  } else {
+    // Reset dropdown to — select —
+    sel.value = '';
+    // Restore previous font on areas
+    document.querySelectorAll('.columns-area').forEach(a => {
+      if (_prevFont) a.style.fontFamily = _prevFont;
+    });
+  }
+
   document.querySelectorAll('.columns-area').forEach(a => {
     if (urduMode) applyUrduToArea(a); else removeUrduFromArea(a);
+  });
+
+  document.querySelectorAll('.page').forEach(p => {
+    p.style.direction = urduMode ? 'rtl' : 'ltr';
+  });
+
+  document.querySelectorAll('.info-row').forEach(r => {
+    r.style.flexDirection = urduMode ? 'row-reverse' : '';
   });
 
   const btn = document.getElementById('urduBtn');
@@ -932,13 +979,6 @@ function toggleUrdu() {
   btn.style.background = urduMode ? '#1a6b3a' : '';
   btn.style.border     = urduMode ? '1px solid #1a6b3a' : '';
   btn.title = urduMode ? 'Switch to LTR (English) mode' : 'Switch to RTL (Urdu) mode';
-
-  document.querySelectorAll('.page').forEach(p => {
-    p.style.direction = urduMode ? 'rtl' : 'ltr';
-  });
-  document.getElementById('fontFamily').value = urduMode
-    ? "JameelNooriNastaliq,serif"
-    : "'EB Garamond',serif";
 }
 
 // ═══════════════════════════════════════
@@ -1620,6 +1660,7 @@ async function saveDocx() {
 // ═══════════════════════════════════════
 window.addEventListener('load', () => {
   drawRuler();
+  syncFonts(); // auto-load fonts on visit
   const area = document.getElementById('columnsArea');
   document.querySelectorAll('.info-input').forEach(i => i.addEventListener('focus', () => i.style.outline='none'));
 
@@ -1659,7 +1700,102 @@ window.addEventListener('load', () => {
 });
 
 // ═══════════════════════════════════════
-// MARGIN CONTROLS
+// LINE SPACING  (long-press on empty lines button)
+// ═══════════════════════════════════════
+let _spacingTimer = null;
+let _spacingMoved = false;
+
+function spacingPressStart(e) {
+  _spacingMoved = false;
+  _spacingTimer = setTimeout(() => {
+    _spacingMoved = true; // flag so release doesn't trigger removeEmptyLines
+    const panel = document.getElementById('spacingPanel');
+    const vw    = window.innerWidth;
+    const PW    = Math.min(220, vw - 16);
+    panel.style.width    = PW + 'px';
+    panel.style.position = 'fixed';
+    panel.style.top      = '120px';
+    panel.style.left     = Math.round((vw - PW) / 2) + 'px';
+    panel.classList.add('open');
+  }, 500);
+}
+
+function spacingPressEnd(e) {
+  clearTimeout(_spacingTimer);
+  if (!_spacingMoved) removeEmptyLines();
+}
+
+function spacingPressCancel() {
+  clearTimeout(_spacingTimer);
+  _spacingMoved = false;
+}
+
+// Close spacing panel on outside click
+document.addEventListener('click', e => {
+  const panel = document.getElementById('spacingPanel');
+  const btn   = document.getElementById('spacingBtn');
+  if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+
+function applyLineHeight(val) {
+  document.querySelectorAll('.columns-area').forEach(a => {
+    a.style.lineHeight = val;
+  });
+  setTimeout(reflowPages, 200);
+}
+
+function applyParaSpace(val) {
+  let style = document.getElementById('paraSpaceStyle');
+  if (!style) { style = document.createElement('style'); style.id = 'paraSpaceStyle'; document.head.appendChild(style); }
+  style.textContent = `.columns-area div, .columns-area p { margin-bottom: ${val}px; }`;
+  setTimeout(reflowPages, 200);
+}
+
+function applyLetterSpacing(val) {
+  document.querySelectorAll('.columns-area').forEach(a => {
+    a.style.letterSpacing = val + 'px';
+  });
+  setTimeout(reflowPages, 200);
+}
+
+function applyWordSpacing(val) {
+  document.querySelectorAll('.columns-area').forEach(a => {
+    a.style.wordSpacing = val + 'px';
+  });
+  setTimeout(reflowPages, 200);
+}
+
+function applyIndent(val) {
+  let style = document.getElementById('indentStyle');
+  if (!style) { style = document.createElement('style'); style.id = 'indentStyle'; document.head.appendChild(style); }
+  style.textContent = `.columns-area div, .columns-area p { text-indent: ${val}px; }`;
+  setTimeout(reflowPages, 200);
+}
+
+function resetSpacing() {
+  document.getElementById('lineHeightSlider').value  = 1.65;
+  document.getElementById('paraSpaceSlider').value   = 0;
+  document.getElementById('letterSpaceSlider').value = 0;
+  document.getElementById('wordSpaceSlider').value   = 0;
+  document.getElementById('indentSlider').value      = 0;
+  document.getElementById('lineHeightVal').textContent  = '1.65';
+  document.getElementById('paraSpaceVal').textContent   = '0px';
+  document.getElementById('letterSpaceVal').textContent = '0px';
+  document.getElementById('wordSpaceVal').textContent   = '0px';
+  document.getElementById('indentVal').textContent      = '0px';
+  document.querySelectorAll('.columns-area').forEach(a => {
+    a.style.lineHeight     = '1.65';
+    a.style.letterSpacing  = '';
+    a.style.wordSpacing    = '';
+  });
+  ['paraSpaceStyle','indentStyle'].forEach(id => {
+    const s = document.getElementById(id);
+    if (s) s.textContent = '';
+  });
+  setTimeout(reflowPages, 200);
+}
 // ═══════════════════════════════════════
 function toggleMarginPanel() {
   const panel = document.getElementById('marginPanel');
