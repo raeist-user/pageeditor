@@ -56,23 +56,6 @@
 }
 html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; }
 
-/* ── TITLE BAR ── */
-.title-bar { height:32px; background:#2b2b2b; display:flex; align-items:center; justify-content:space-between; padding:0 12px; color:#ccc; font-size:12px; user-select:none; }
-.app-name { color:#fff; font-weight:600; }
-.win-btns { display:flex; gap:6px; }
-.win-btn { width:12px; height:12px; border-radius:50%; border:none; cursor:pointer; }
-.win-btn.close{background:#ff5f57;} .win-btn.min{background:#febc2e;} .win-btn.max{background:#28c840;}
-
-/* ── MENU BAR ── */
-.menu-bar { height:28px; background:var(--tb); border-bottom:1px solid var(--tb-border); display:flex; align-items:center; padding:0 4px; position:relative; user-select:none; overflow-x:auto; overflow-y:visible; }
-.menu-item { padding:0 10px; font-size:12.5px; display:flex; align-items:center; cursor:pointer; border-radius:3px; position:relative; color:#333; transition:background .1s; }
-.menu-item:hover,.menu-item.open { background:var(--hover); }
-.dropdown { display:none; position:absolute; top:100%; left:0; background:#fff; border:1px solid #ccc; border-radius:4px; box-shadow:0 4px 14px rgba(0,0,0,.14); min-width:170px; z-index:999; padding:4px 0; }
-.menu-item.open .dropdown { display:block; }
-.dropdown-item { padding:5px 14px; font-size:12.5px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; justify-content:space-between; gap:20px; color:#222; }
-.dropdown-item:hover { background:#e8f0fb; color:var(--accent); }
-.dropdown-item .sc { color:#aaa; font-size:11px; }
-.dd-sep { height:1px; background:#e8e8e8; margin:4px 0; }
 
 /* ── RIBBON ── */
 .ribbon { background:var(--tb); border-bottom:1px solid var(--tb-border); padding:4px 8px; display:flex; align-items:center; flex-wrap:wrap; gap:2px; }
@@ -238,7 +221,7 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 
 /* ── PRINT ── */
 @media print {
-  .title-bar,.menu-bar,.ribbon,.smart-ribbon,.ruler,.status-bar,.page-nav{display:none!important;}
+  .toolbar-area,.ruler,.status-bar,.page-nav{display:none!important;}
   .editor-scroll{overflow:visible!important;background:none;}
   .zoom-outer,.zoom-wrapper{position:static!important;transform:none!important;width:auto!important;height:auto!important;padding:0!important;gap:0!important;}
   .page{box-shadow:none!important;overflow:visible!important;page-break-after:always;break-after:page;height:297mm!important;width:210mm!important;margin:0!important;}
@@ -251,78 +234,11 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 <body>
 <div class="app">
 
-<!-- TITLE BAR -->
-<div class="title-bar">
-  <div style="display:flex;align-items:center;gap:8px;">
-    <span>📄</span><span class="app-name">PageEditor</span>
-    <span style="margin-left:8px;opacity:.5;">— Shadab Coaching Centre</span>
-  </div>
-  <div class="win-btns">
-    <button class="win-btn min"></button><button class="win-btn max"></button><button class="win-btn close"></button>
-  </div>
-</div>
-
 <div class="toolbar-area">
-<!-- MENU BAR -->
-<div class="menu-bar" id="menuBar">
-  <div class="menu-item">File
-    <div class="dropdown">
-      <div class="dropdown-item" onclick="savePDF()">Save as PDF <span class="sc">Ctrl+P</span></div>
-      <div class="dd-sep"></div>
-      <div class="dropdown-item" onclick="saveDocx()">Save as DOCX</div>
-      <div class="dd-sep"></div>
-      <div class="dropdown-item" onclick="clearAll()">New / Clear</div>
-    </div>
-  </div>
-  <div class="menu-item">Edit
-    <div class="dropdown">
-      <div class="dropdown-item" onclick="document.execCommand('undo')">Undo <span class="sc">Ctrl+Z</span></div>
-      <div class="dropdown-item" onclick="document.execCommand('redo')">Redo <span class="sc">Ctrl+Y</span></div>
-      <div class="dd-sep"></div>
-      <div class="dropdown-item" onclick="document.execCommand('selectAll')">Select All <span class="sc">Ctrl+A</span></div>
-    </div>
-  </div>
-  <div class="menu-item">Format
-    <div class="dropdown">
-      <div class="dropdown-item" onclick="document.execCommand('bold')">Bold <span class="sc">Ctrl+B</span></div>
-      <div class="dropdown-item" onclick="document.execCommand('italic')">Italic <span class="sc">Ctrl+I</span></div>
-      <div class="dropdown-item" onclick="document.execCommand('underline')">Underline <span class="sc">Ctrl+U</span></div>
-      <div class="dd-sep"></div>
-      <div class="dropdown-item" onclick="document.execCommand('justifyLeft')">Align Left</div>
-      <div class="dropdown-item" onclick="document.execCommand('justifyCenter')">Align Centre</div>
-      <div class="dropdown-item" onclick="document.execCommand('justifyRight')">Align Right</div>
-      <div class="dropdown-item" onclick="document.execCommand('justifyFull')">Justify</div>
-    </div>
-  </div>
-  <div class="menu-item">Insert
-    <div class="dropdown">
-      <div class="dropdown-item" onclick="insertHR()">Horizontal Rule</div>
-      <div class="dropdown-item" onclick="renderAllLatex()">Render LaTeX in Document</div>
-    </div>
-  </div>
-  <div class="menu-item">View
-    <div class="dropdown">
-      <div class="dropdown-item" onclick="setZoom(60)">Zoom 60%</div>
-      <div class="dropdown-item" onclick="setZoom(75)">Zoom 75%</div>
-      <div class="dropdown-item" onclick="setZoom(100)">Zoom 100%</div>
-      <div class="dropdown-item" onclick="setZoom(125)">Zoom 125%</div>
-      <div class="dropdown-item" onclick="setZoom(150)">Zoom 150%</div>
-    </div>
-  </div>
-  <!-- Smart Format inline buttons -->
-  <div class="mf-sep"></div>
-  <button class="mf-btn" onclick="transformAsterisks('bold')" title="Bold lines starting with *"><b>*B</b>&nbsp;Bold *</button>
-  <button class="mf-btn" onclick="transformAsterisks('serial')" title="Add serial numbers to lines starting with *">#&nbsp;Serial *</button>
-  <button class="mf-btn" onclick="transformAsterisks('both')" title="Bold + serial on lines starting with *"><b>#B</b>&nbsp;Both *</button>
-  <div class="mf-sep"></div>
-  <button class="mf-btn" onclick="transformNumbers('bold')" title="Bold text after numbered lines (1. Question)"><b>1.</b>&nbsp;Bold Nums</button>
-  <div class="mf-sep"></div>
-  <button class="mf-btn reset-btn" onclick="transformAsterisks('reset')" title="Remove * markers">✕&nbsp;Remove *</button>
-</div>
 
-<!-- MAIN RIBBON -->
+<!-- ═══ ROW 1: Font · Font Size · Align · Bullets ═══ -->
 <div class="ribbon">
-  <select class="rb-sel" style="width:120px;" id="fontFamily" onchange="applyFont(this.value)">
+  <select class="rb-sel" style="width:80px;" id="fontFamily" onchange="applyFont(this.value)">
     <option value="'EB Garamond',serif">EB Garamond</option>
     <option value="'Times New Roman',serif">Times New Roman</option>
     <option value="Georgia,serif">Georgia</option>
@@ -333,54 +249,26 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   </select>
   <input type="number" class="fsize" id="fontSize" value="10" min="6" max="72" onchange="applyFontSize(this.value)" title="pt">
   <div class="rsep"></div>
-
-  <button class="rb" onclick="document.execCommand('bold')" title="Bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button>
-  <button class="rb" onclick="document.execCommand('italic')" title="Italic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
-  <button class="rb" onclick="document.execCommand('underline')" title="Underline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" y1="20" x2="20" y2="20"/></svg></button>
-  <button class="rb" onclick="document.execCommand('undo')" title="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></button>
-  <button class="rb" onclick="document.execCommand('redo')" title="Redo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></button>
-  <div class="rsep"></div>
-
   <button class="rb" onclick="document.execCommand('justifyLeft')" title="Left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg></button>
   <button class="rb" onclick="document.execCommand('justifyCenter')" title="Centre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
   <button class="rb" onclick="document.execCommand('justifyRight')" title="Right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg></button>
   <button class="rb" onclick="document.execCommand('justifyFull')" title="Justify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <div class="rsep"></div>
-
   <button class="rb" onclick="document.execCommand('insertUnorderedList')" title="Bullets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg></button>
   <button class="rb" onclick="document.execCommand('insertOrderedList')" title="Numbered"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" font-size="6" fill="currentColor" stroke="none">1.</text><text x="2" y="14" font-size="6" fill="currentColor" stroke="none">2.</text><text x="2" y="20" font-size="6" fill="currentColor" stroke="none">3.</text></svg></button>
-  <div class="rsep"></div>
+</div>
 
-  <label class="rb" title="Text Color" style="cursor:pointer;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 3L3 18h3l1.5-4h7L16 18h3L12 3z"/><rect x="3" y="20" width="18" height="2" rx="1" fill="#e53e3e" stroke="none"/></svg>
-    <input type="color" value="#000000" style="width:0;height:0;opacity:0;position:absolute;" onchange="document.execCommand('foreColor',false,this.value)">
-  </label>
-  <label class="rb" title="Highlight" style="cursor:pointer;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 20h8M12 16v4" stroke-linecap="round"/><rect x="3" y="20" width="18" height="2" rx="1" fill="#fbbf24" stroke="none"/></svg>
-    <input type="color" value="#fef08a" style="width:0;height:0;opacity:0;position:absolute;" onchange="document.execCommand('hiliteColor',false,this.value)">
-  </label>
-  <div class="rsep"></div>
-
-  <!-- LaTeX render button -->
-  <button class="rb" onclick="renderAllLatex()" title="Render all $…$ and $$…$$ LaTeX in the document" style="color:#7b2d8b;font-weight:700;font-size:13px;">∑ Render LaTeX</button>
-
-  <!-- Urdu RTL toggle -->
+<!-- ═══ ROW 2: Render LaTeX · Urdu · KB Lock · Save PDF · Save DOCX · Margins ═══ -->
+<div class="ribbon">
+  <button class="rb" onclick="renderAllLatex()" title="Render LaTeX" style="color:#7b2d8b;font-weight:700;font-size:13px;">∑</button>
   <button class="rb" id="urduBtn" onclick="toggleUrdu()" title="Toggle Urdu RTL mode" style="color:#1a6b3a;font-weight:700;">اردو</button>
   <div class="rsep"></div>
-  <button class="rb kb-lock" id="kbLockBtn" onclick="toggleKeyboardLock()" title="Lock keyboard (scroll mode)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-    KB Lock
-  </button>
+  <button class="rb" onclick="savePDF()" title="Save as PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+  <button class="rb" onclick="saveDocx()" title="Save DOCX" style="color:#1a5c2a;font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button>
   <div class="rsep"></div>
-
-  <button class="rb" onclick="savePDF()" title="Save as PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Save PDF</button>
-  <button class="rb" onclick="saveDocx()" title="Save DOCX" style="color:#1a5c2a;font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Save DOCX</button>
-  <div class="rsep"></div>
-  <!-- Margins button -->
   <div class="mp-wrap">
     <button class="rb" id="marginBtn" onclick="toggleMarginPanel()" title="Adjust page margins" style="color:#5a3a8a;font-weight:600;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
-      Margins
     </button>
     <div class="margin-panel" id="marginPanel">
       <h4>📐 Page Margins (inches)</h4>
@@ -389,32 +277,38 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
         <button class="mp-preset" onclick="setPresetMargin('narrow')">Narrow</button>
         <button class="mp-preset" onclick="setPresetMargin('wide')">Wide</button>
       </div>
-      <div class="mp-row">
-        <label>Top</label>
-        <input type="range" id="mTop" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mTop','mTopV')">
-        <span class="mp-val" id="mTopV">0.1″</span>
-      </div>
-      <div class="mp-row">
-        <label>Bottom</label>
-        <input type="range" id="mBot" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mBot','mBotV')">
-        <span class="mp-val" id="mBotV">0.1″</span>
-      </div>
-      <div class="mp-row">
-        <label>Left</label>
-        <input type="range" id="mLeft" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mLeft','mLeftV')">
-        <span class="mp-val" id="mLeftV">0.1″</span>
-      </div>
-      <div class="mp-row">
-        <label>Right</label>
-        <input type="range" id="mRight" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mRight','mRightV')">
-        <span class="mp-val" id="mRightV">0.1″</span>
-      </div>
+      <div class="mp-row"><label>Top</label><input type="range" id="mTop" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mTop','mTopV')"><span class="mp-val" id="mTopV">0.1″</span></div>
+      <div class="mp-row"><label>Bottom</label><input type="range" id="mBot" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mBot','mBotV')"><span class="mp-val" id="mBotV">0.1″</span></div>
+      <div class="mp-row"><label>Left</label><input type="range" id="mLeft" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mLeft','mLeftV')"><span class="mp-val" id="mLeftV">0.1″</span></div>
+      <div class="mp-row"><label>Right</label><input type="range" id="mRight" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mRight','mRightV')"><span class="mp-val" id="mRightV">0.1″</span></div>
       <button class="mp-apply" onclick="applyMargins()">Apply Margins</button>
     </div>
   </div>
+  <div class="rsep"></div>
+  <button class="rb kb-lock" id="kbLockBtn" onclick="toggleKeyboardLock()" title="Lock keyboard (scroll mode)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+  </button>
+  <div class="rsep"></div>
+  <button class="rb" onclick="document.execCommand('undo')" title="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></button>
+  <button class="rb" onclick="document.execCommand('redo')" title="Redo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></button>
 </div>
 
-
+<!-- ═══ ROW 3: Bold · Italic · Underline · Undo/Redo · Color · Smart Format ═══ -->
+<div class="ribbon">
+  <button class="rb" onclick="document.execCommand('bold')" title="Bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button>
+  <button class="rb" onclick="document.execCommand('italic')" title="Italic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
+  <button class="rb" onclick="document.execCommand('underline')" title="Underline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" y1="20" x2="20" y2="20"/></svg></button>
+  <div class="rsep"></div>
+  <button class="mf-btn" onclick="transformAsterisks('bold')" title="Bold lines starting with *"><b>*B</b></button>
+  <button class="mf-btn" onclick="transformAsterisks('serial')" title="Add serial numbers to lines starting with *">#*</button>
+  <button class="mf-btn" onclick="transformAsterisks('both')" title="Bold + serial on lines starting with *"><b>#B</b></button>
+  <div class="mf-sep"></div>
+  <button class="mf-btn" onclick="transformNumbers('bold')" title="Bold text after numbered lines (1. Question)"><b>1.</b></button>
+  <div class="mf-sep"></div>
+  <button class="mf-btn" onclick="removeEmptyLines()" title="Remove empty blank lines">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><line x1="5" y1="2" x2="19" y2="2" stroke-dasharray="2 2" stroke-width="1.5" stroke="#aaa"/><line x1="5" y1="9" x2="19" y2="9" stroke-dasharray="2 2" stroke-width="1.5" stroke="#aaa"/></svg>
+  </button>
+</div>
 
 </div><!-- /toolbar-area -->
 
@@ -475,6 +369,13 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 
 <script>
 'use strict';
+
+// ═══════════════════════════════════════
+// PRESERVE EDITOR FOCUS on toolbar clicks
+// ═══════════════════════════════════════
+document.querySelectorAll('.toolbar-area .rb, .toolbar-area .mf-btn').forEach(btn => {
+  btn.addEventListener('mousedown', e => e.preventDefault());
+});
 
 // ═══════════════════════════════════════
 // MENU DROPDOWNS
@@ -1225,7 +1126,36 @@ function transformNumbers(mode) {
   updateCounts();
   setTimeout(reflowPages, 200);
 }
-//
+
+// ═══════════════════════════════════════
+// REMOVE EMPTY LINES
+// Strips blank/whitespace-only lines from all pages
+// ═══════════════════════════════════════
+function removeEmptyLines() {
+  const allAreas = [...document.querySelectorAll('.columns-area')];
+  // Collect all text from every page
+  const text = allAreas.map(a => a.innerText).join('\n');
+  if (!text.trim()) { alert('No content found.'); return; }
+
+  // Filter out lines that are empty or whitespace-only
+  const cleaned = text.split('\n')
+    .filter(line => line.trim() !== '')
+    .join('\n');
+
+  // Build HTML divs
+  const html = cleaned.split('\n')
+    .map(line => `<div>${escHtml(line)}</div>`)
+    .join('');
+
+  // Dump into page 1 and reflow
+  document.querySelectorAll('.page-cont').forEach(p => p.remove());
+  document.getElementById('columnsArea').innerHTML = html;
+
+  updateCounts();
+  setTimeout(reflowPages, 200);
+}
+
+
 // Rasterises each page using html2canvas + jsPDF.
 // MathJax SVGs are pre-converted to PNG data URIs so they render correctly.
 // On mobile uses Web Share API to share the PDF file directly.
