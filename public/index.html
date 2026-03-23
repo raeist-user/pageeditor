@@ -5,41 +5,123 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shadab Page Editor</title>
 
-<!-- EB Garamond from Google Fonts CDN -->
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
-
-<!-- Jameel Noori loaded from GitHub repo fonts/ folder -->
+<!-- Fonts — auto-detected from GitHub fonts/ folder -->
 <style id="fontFaceStyle"></style>
 <script>
-const GITHUB_TOKEN  = '';        // ← your GitHub token
 const GITHUB_USER   = 'raeist-user';
 const GITHUB_REPO   = 'pageeditor';
 const GITHUB_BRANCH = 'main';
+const GITHUB_TOKEN  = ''; // ← paste token if repo is private
 
-(async function loadFonts() {
-  if (!GITHUB_TOKEN) {
-    console.warn('GITHUB_TOKEN not set — Urdu font will not load.');
-    return;
-  }
+// Derive a CSS font-family name from filename
+// e.g. "Jameel Noori Nastaleeq.ttf" → "Jameel Noori Nastaleeq"
+//      "EBGaramond-Regular.ttf"     → "EB Garamond"
+function familyFromFile(name) {
+  const base = name.replace(/\.(ttf|otf|woff2?)$/i, '');
+  // Split on - or _ and drop weight/style words
+  const weightWords = /^(regular|bold|italic|medium|light|semibold|extrabold|thin|black|bolditalic)$/i;
+  const parts = base.split(/[-_]/).filter(p => !weightWords.test(p));
+  // Insert spaces before capitals in camelCase  e.g. EBGaramond → EB Garamond
+  return parts.join(' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+}
+
+function styleFromFile(name) {
+  return /italic/i.test(name) ? 'italic' : 'normal';
+}
+
+function weightFromFile(name) {
+  if (/thin/i.test(name))      return 100;
+  if (/light/i.test(name))     return 300;
+  if (/medium/i.test(name))    return 500;
+  if (/semibold/i.test(name))  return 600;
+  if (/extrabold/i.test(name)) return 800;
+  if (/black/i.test(name))     return 900;
+  if (/bold/i.test(name))      return 700;
+  return 400;
+}
+
+function formatFromFile(name) {
+  if (/\.woff2$/i.test(name)) return 'woff2';
+  if (/\.woff$/i.test(name))  return 'woff';
+  if (/\.otf$/i.test(name))   return 'opentype';
+  return 'truetype';
+}
+
+(async function detectAndLoadFonts() {
   try {
-    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/fonts/Jameel%20Noori%20Nastaleeq.ttf?ref=${GITHUB_BRANCH}`;
-    const res = await fetch(url, {
-      headers: {
-        'Authorization': 'token ' + GITHUB_TOKEN,
-        'Accept': 'application/vnd.github.v3.raw'
+    const headers = { 'Accept': 'application/vnd.github.v3+json' };
+    if (GITHUB_TOKEN) headers['Authorization'] = 'token ' + GITHUB_TOKEN;
+
+    // List contents of fonts/ folder
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/fonts?ref=${GITHUB_BRANCH}`,
+      { headers }
+    );
+    if (!res.ok) throw new Error('Could not list fonts folder: HTTP ' + res.status);
+    const files = await res.json();
+
+    // Filter to font files only
+    const fontFiles = files.filter(f =>
+      f.type === 'file' && /\.(ttf|otf|woff2?)$/i.test(f.name)
+    );
+
+    if (!fontFiles.length) { console.warn('No font files found in fonts/'); return; }
+
+    // Fetch each font and build @font-face
+    const rawHeaders = { 'Accept': 'application/vnd.github.v3.raw' };
+    if (GITHUB_TOKEN) rawHeaders['Authorization'] = 'token ' + GITHUB_TOKEN;
+
+    const results = await Promise.allSettled(
+      fontFiles.map(async f => {
+        const r = await fetch(f.download_url, { headers: rawHeaders });
+        if (!r.ok) throw new Error(f.name + ' HTTP ' + r.status);
+        const blob = await r.blob();
+        const b64  = await new Promise(ok => {
+          const fr = new FileReader();
+          fr.onload = () => ok(fr.result);
+          fr.readAsDataURL(blob);
+        });
+        return {
+          family : familyFromFile(f.name),
+          style  : styleFromFile(f.name),
+          weight : weightFromFile(f.name),
+          format : formatFromFile(f.name),
+          b64
+        };
+      })
+    );
+
+    const css = results.map((r, i) => {
+      if (r.status === 'rejected') {
+        console.warn('Font skipped:', fontFiles[i].name, r.reason);
+        return '';
       }
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const blob = await res.blob();
-    const b64  = await new Promise(ok => {
-      const r = new FileReader();
-      r.onload = () => ok(r.result);
-      r.readAsDataURL(blob);
-    });
-    document.getElementById('fontFaceStyle').textContent =
-      `@font-face{font-family:'JameelNooriNastaliq';font-style:normal;font-weight:400;src:url('${b64}') format('truetype');}`;
+      const { family, style, weight, format, b64 } = r.value;
+      return `@font-face{font-family:'${family}';font-style:${style};font-weight:${weight};src:url('${b64}') format('${format}');}`;
+    }).filter(Boolean).join('\n');
+
+    document.getElementById('fontFaceStyle').textContent = css;
+
+    // Rebuild font dropdown with whatever was found
+    const seen = new Set();
+    const select = document.getElementById('fontFamily');
+    if (select) {
+      select.innerHTML = '';
+      results.forEach(r => {
+        if (r.status !== 'fulfilled') return;
+        const fam = r.value.family;
+        if (seen.has(fam)) return;
+        seen.add(fam);
+        const opt = document.createElement('option');
+        opt.value = `'${fam}',serif`;
+        opt.textContent = fam;
+        select.appendChild(opt);
+      });
+    }
+
+    console.log('Fonts loaded:', [...seen].join(', '));
   } catch(e) {
-    console.warn('Urdu font failed:', e.message);
+    console.warn('Font loader error:', e.message);
   }
 })();
 </script>
