@@ -5,82 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shadab Page Editor</title>
 
-<!-- Fonts — loaded from GitHub repo via token -->
-<style id="fontFaceStyle">
-/* fonts injected by loadFontsFromGitHub() below */
-</style>
+<!-- EB Garamond from Google Fonts CDN -->
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
+
+<!-- Jameel Noori loaded from GitHub repo fonts/ folder -->
+<style id="fontFaceStyle"></style>
 <script>
-// ═══════════════════════════════════════
-// GITHUB FONT LOADER
-// Set your repo details and token below
-// ═══════════════════════════════════════
-const GITHUB_TOKEN = '';           // ← paste your GitHub token here
-const GITHUB_USER  = '';           // ← your GitHub username  e.g. 'shadab'
-const GITHUB_REPO  = '';           // ← your repo name        e.g. 'page-editor'
+const GITHUB_TOKEN  = '';        // ← your GitHub token
+const GITHUB_USER   = 'raeist-user';
+const GITHUB_REPO   = 'pageeditor';
 const GITHUB_BRANCH = 'main';
 
-const FONTS = [
-  // English fonts
-  { family:'EB Garamond', weight:400, style:'normal',  file:'EBGaramond-Regular.ttf'   },
-  { family:'EB Garamond', weight:400, style:'italic',  file:'EBGaramond-Italic.ttf'    },
-  { family:'EB Garamond', weight:500, style:'normal',  file:'EBGaramond-Medium.ttf'    },
-  { family:'EB Garamond', weight:600, style:'normal',  file:'EBGaramond-SemiBold.ttf'  },
-  { family:'EB Garamond', weight:700, style:'normal',  file:'EBGaramond-Bold.ttf'      },
-  { family:'EB Garamond', weight:700, style:'italic',  file:'EBGaramond-BoldItalic.ttf'},
-  { family:'JetBrains Mono', weight:400, style:'normal', file:'JetBrainsMono-Regular.ttf'},
-  { family:'JetBrains Mono', weight:500, style:'normal', file:'JetBrainsMono-Medium.ttf' },
-  { family:'Nunito Sans', weight:300, style:'normal',  file:'NunitoSans-Light.ttf'     },
-  { family:'Nunito Sans', weight:400, style:'normal',  file:'NunitoSans-Regular.ttf'   },
-  { family:'Nunito Sans', weight:600, style:'normal',  file:'NunitoSans-SemiBold.ttf'  },
-  { family:'Nunito Sans', weight:700, style:'normal',  file:'NunitoSans-Bold.ttf'      },
-  // Urdu font
-  { family:'JameelNooriNastaliq', weight:400, style:'normal', file:'Jameel Noori Nastaleeq.ttf' },
-];
-
-async function loadFontsFromGitHub() {
-  // If no token/repo set, fall back to relative ../fonts/ path
-  if (!GITHUB_TOKEN || !GITHUB_USER || !GITHUB_REPO) {
-    const css = FONTS.map(f =>
-      `@font-face { font-family:'${f.family}'; font-style:${f.style}; font-weight:${f.weight};` +
-      ` src:url('../fonts/${f.file}') format('truetype'); }`
-    ).join('\n');
-    document.getElementById('fontFaceStyle').textContent = css;
+(async function loadFonts() {
+  if (!GITHUB_TOKEN) {
+    console.warn('GITHUB_TOKEN not set — Urdu font will not load.');
     return;
   }
-
-  const base = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/fonts/`;
-  const headers = {
-    'Authorization': 'token ' + GITHUB_TOKEN,
-    'Accept': 'application/vnd.github.v3.raw'
-  };
-
-  const results = await Promise.allSettled(
-    FONTS.map(async f => {
-      const url = base + encodeURIComponent(f.file) + '?ref=' + GITHUB_BRANCH;
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error(f.file + ' not found');
-      const blob   = await res.blob();
-      const b64    = await new Promise(resolve => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result); // data:font/...;base64,...
-        r.readAsDataURL(blob);
-      });
-      return { ...f, b64 };
-    })
-  );
-
-  const css = results.map((r, i) => {
-    const f = FONTS[i];
-    const src = r.status === 'fulfilled'
-      ? `url('${r.value.b64}') format('truetype')`
-      : `url('../fonts/${f.file}') format('truetype')`; // local fallback
-    return `@font-face { font-family:'${f.family}'; font-style:${f.style}; font-weight:${f.weight}; src:${src}; }`;
-  }).join('\n');
-
-  document.getElementById('fontFaceStyle').textContent = css;
-}
-
-loadFontsFromGitHub();
+  try {
+    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/fonts/Jameel%20Noori%20Nastaleeq.ttf?ref=${GITHUB_BRANCH}`;
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': 'token ' + GITHUB_TOKEN,
+        'Accept': 'application/vnd.github.v3.raw'
+      }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const b64  = await new Promise(ok => {
+      const r = new FileReader();
+      r.onload = () => ok(r.result);
+      r.readAsDataURL(blob);
+    });
+    document.getElementById('fontFaceStyle').textContent =
+      `@font-face{font-family:'JameelNooriNastaliq';font-style:normal;font-weight:400;src:url('${b64}') format('truetype');}`;
+  } catch(e) {
+    console.warn('Urdu font failed:', e.message);
+  }
+})();
 </script>
 <!-- MathJax (LaTeX rendering) -->
 <script>
@@ -323,12 +284,7 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 <div class="ribbon">
   <select class="rb-sel" style="width:80px;" id="fontFamily" onchange="applyFont(this.value)">
     <option value="'EB Garamond',serif">EB Garamond</option>
-    <option value="'Times New Roman',serif">Times New Roman</option>
-    <option value="Georgia,serif">Georgia</option>
-    <option value="Arial,sans-serif">Arial</option>
-    <option value="'Nunito Sans',sans-serif">Nunito Sans</option>
-    <option value="'JetBrains Mono',monospace">Mono</option>
-    <option value="JameelNooriNastaliq,serif">Jameel Nastaliq (Urdu)</option>
+    <option value="JameelNooriNastaliq,serif">Jameel Nastaliq</option>
   </select>
   <input type="number" class="fsize" id="fontSize" value="10" min="6" max="72" onchange="applyFontSize(this.value)" title="pt">
   <div class="rsep"></div>
