@@ -5,28 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shadab Page Editor</title>
 
-<!-- Fonts — loaded from main/fonts/ folder -->
+<!-- Fonts — loaded from ../fonts/ folder -->
 <style>
 /* ── EB Garamond ── */
-@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:400; src:url('main/fonts/EBGaramond-Regular.ttf') format('truetype'),url('main/fonts/EBGaramond-Regular.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:italic; font-weight:400; src:url('main/fonts/EBGaramond-Italic.ttf') format('truetype'),url('main/fonts/EBGaramond-Italic.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:500; src:url('main/fonts/EBGaramond-Medium.ttf') format('truetype'),url('main/fonts/EBGaramond-Medium.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:600; src:url('main/fonts/EBGaramond-SemiBold.ttf') format('truetype'),url('main/fonts/EBGaramond-SemiBold.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:700; src:url('main/fonts/EBGaramond-Bold.ttf') format('truetype'),url('main/fonts/EBGaramond-Bold.woff2') format('woff2'); }
-@font-face { font-family:'EB Garamond'; font-style:italic; font-weight:700; src:url('main/fonts/EBGaramond-BoldItalic.ttf') format('truetype'),url('main/fonts/EBGaramond-BoldItalic.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:400; src:url('../fonts/EBGaramond-Regular.ttf') format('truetype'),url('../fonts/EBGaramond-Regular.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:italic; font-weight:400; src:url('../fonts/EBGaramond-Italic.ttf') format('truetype'),url('../fonts/EBGaramond-Italic.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:500; src:url('../fonts/EBGaramond-Medium.ttf') format('truetype'),url('../fonts/EBGaramond-Medium.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:600; src:url('../fonts/EBGaramond-SemiBold.ttf') format('truetype'),url('../fonts/EBGaramond-SemiBold.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:normal; font-weight:700; src:url('../fonts/EBGaramond-Bold.ttf') format('truetype'),url('../fonts/EBGaramond-Bold.woff2') format('woff2'); }
+@font-face { font-family:'EB Garamond'; font-style:italic; font-weight:700; src:url('../fonts/EBGaramond-BoldItalic.ttf') format('truetype'),url('../fonts/EBGaramond-BoldItalic.woff2') format('woff2'); }
 /* ── JetBrains Mono ── */
-@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:400; src:url('main/fonts/JetBrainsMono-Regular.ttf') format('truetype'),url('main/fonts/JetBrainsMono-Regular.woff2') format('woff2'); }
-@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:500; src:url('main/fonts/JetBrainsMono-Medium.ttf') format('truetype'),url('main/fonts/JetBrainsMono-Medium.woff2') format('woff2'); }
+@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:400; src:url('../fonts/JetBrainsMono-Regular.ttf') format('truetype'),url('../fonts/JetBrainsMono-Regular.woff2') format('woff2'); }
+@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:500; src:url('../fonts/JetBrainsMono-Medium.ttf') format('truetype'),url('../fonts/JetBrainsMono-Medium.woff2') format('woff2'); }
 /* ── Nunito Sans ── */
-@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:300; src:url('main/fonts/NunitoSans-Light.ttf') format('truetype'),url('main/fonts/NunitoSans-Light.woff2') format('woff2'); }
-@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:400; src:url('main/fonts/NunitoSans-Regular.ttf') format('truetype'),url('main/fonts/NunitoSans-Regular.woff2') format('woff2'); }
-@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:600; src:url('main/fonts/NunitoSans-SemiBold.ttf') format('truetype'),url('main/fonts/NunitoSans-SemiBold.woff2') format('woff2'); }
-@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:700; src:url('main/fonts/NunitoSans-Bold.ttf') format('truetype'),url('main/fonts/NunitoSans-Bold.woff2') format('woff2'); }
+@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:300; src:url('../fonts/NunitoSans-Light.ttf') format('truetype'),url('../fonts/NunitoSans-Light.woff2') format('woff2'); }
+@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:400; src:url('../fonts/NunitoSans-Regular.ttf') format('truetype'),url('../fonts/NunitoSans-Regular.woff2') format('woff2'); }
+@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:600; src:url('../fonts/NunitoSans-SemiBold.ttf') format('truetype'),url('../fonts/NunitoSans-SemiBold.woff2') format('woff2'); }
+@font-face { font-family:'Nunito Sans'; font-style:normal; font-weight:700; src:url('../fonts/NunitoSans-Bold.ttf') format('truetype'),url('../fonts/NunitoSans-Bold.woff2') format('woff2'); }
 /* ── Jameel Noori Nastaliq (Urdu) ── */
-@font-face { font-family:'JameelNooriNastaliq'; font-style:normal; font-weight:400; src:url('main/fonts/JameelNooriNastaleeq.ttf') format('truetype'),url('main/fonts/JameelNooriNastaliq.ttf') format('truetype'),url('main/fonts/Jameel-Noori-Nastaleeq.ttf') format('truetype'); }
+@font-face { font-family:'JameelNooriNastaliq'; font-style:normal; font-weight:400; src:url('../fonts/Jameel Noori Nastaleeq.ttf') format('truetype'); }
 </style>
-<!-- Jameel Noori CDN fallback if local file is absent -->
-<link href="https://cdn.jsdelivr.net/npm/jameel-noori@1.1.2/jameel-noori.min.css" rel="stylesheet">
+<!-- Jameel Noori loaded from ../fonts/ folder -->
 <!-- MathJax (LaTeX rendering) -->
 <script>
   window.MathJax = {
@@ -219,7 +218,35 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 }
 .pg-nav-arrow:hover { color: #fff; }
 
-/* ── PRINT ── */
+/* ── AUTOSAVE INDICATOR ── */
+.autosave-dot { width:7px; height:7px; border-radius:50%; background:#4caf50; display:inline-block; margin-left:4px; transition:background .3s; }
+.autosave-dot.saving { background:#f5a623; }
+.autosave-dot.error  { background:#e53e3e; }
+
+/* ── DRIVE PANEL ── */
+.drive-panel {
+  display:none; position:fixed;
+  background:#fff; border:1px solid #ccc; border-radius:6px;
+  box-shadow:0 4px 18px rgba(0,0,0,.18);
+  padding:14px 16px 16px; z-index:9999; width:260px;
+  font-family:'Nunito Sans',sans-serif; font-size:12px;
+}
+.drive-panel.open { display:block; }
+.drive-panel h4 { font-size:12px; font-weight:700; color:#333; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.drive-section { margin-bottom:10px; }
+.drive-section label { display:block; color:#555; font-size:11px; margin-bottom:4px; font-weight:600; }
+.drive-input { width:100%; height:26px; border:1px solid #ccc; border-radius:3px; padding:0 7px; font-size:11.5px; font-family:'Nunito Sans',sans-serif; outline:none; }
+.drive-input:focus { border-color:var(--accent); }
+.drive-btn { width:100%; height:27px; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-family:'Nunito Sans',sans-serif; font-weight:600; margin-top:5px; display:flex; align-items:center; justify-content:center; gap:6px; }
+.drive-btn.export { background:#1a73e8; color:#fff; }
+.drive-btn.export:hover { background:#1558b0; }
+.drive-btn.import { background:#34a853; color:#fff; }
+.drive-btn.import:hover { background:#267a3e; }
+.drive-btn.local-export { background:#f3f3f3; color:#333; border:1px solid #ccc; }
+.drive-btn.local-export:hover { background:#e8e8e8; }
+.drive-status { font-size:10.5px; color:#666; margin-top:8px; min-height:14px; text-align:center; }
+.drive-sep { height:1px; background:#eee; margin:10px 0; }
+
 @media print {
   .toolbar-area,.ruler,.status-bar,.page-nav{display:none!important;}
   .editor-scroll{overflow:visible!important;background:none;}
@@ -265,6 +292,70 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   <div class="rsep"></div>
   <button class="rb" onclick="savePDF()" title="Save as PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
   <button class="rb" onclick="saveDocx()" title="Save DOCX" style="color:#1a5c2a;font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button>
+  <div class="rsep"></div>
+  <!-- Drive button -->
+  <div class="mp-wrap" id="driveWrap">
+    <button class="rb" id="driveBtn" onclick="toggleDrivePanel()" title="Google Drive / Local Save & Load" style="color:#1a73e8;font-weight:700;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2L2 19h20L12 2z" stroke-linejoin="round"/><path d="M2 19h20" /><path d="M8.5 13L12 7l3.5 6"/></svg>
+    </button>
+    <div class="drive-panel" id="drivePanel">
+      <h4>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" width="14" height="14"><path d="M12 2L2 19h20L12 2z" stroke-linejoin="round"/></svg>
+        Drive &amp; Local Storage
+      </h4>
+
+      <!-- LOCAL AUTO-SAVE -->
+      <div class="drive-section">
+        <label>💾 Local Auto-Save (Browser)</label>
+        <button class="drive-btn local-export" onclick="localSaveNow()">Save Now to Browser</button>
+        <button class="drive-btn local-export" style="margin-top:4px;" onclick="localLoad()">Restore from Browser</button>
+        <button class="drive-btn local-export" style="margin-top:4px;color:#c0392b;" onclick="localClear()">Clear Saved Data</button>
+      </div>
+
+      <div class="drive-sep"></div>
+
+      <!-- EXPORT FILE -->
+      <div class="drive-section">
+        <label>📤 Export to File (.shadab)</label>
+        <button class="drive-btn export" onclick="exportFile()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download .shadab file
+        </button>
+      </div>
+
+      <!-- IMPORT FILE -->
+      <div class="drive-section">
+        <label>📥 Import from File (.shadab)</label>
+        <label class="drive-btn import" style="cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/></svg>
+          Open .shadab file
+          <input type="file" accept=".shadab,.json" style="display:none;" onchange="importFile(event)">
+        </label>
+      </div>
+
+      <div class="drive-sep"></div>
+
+      <!-- GOOGLE DRIVE via Apps Script -->
+      <div class="drive-section">
+        <label>☁️ Google Drive (via Gmail)</label>
+        <input class="drive-input" id="scriptUrl" placeholder="Paste your Apps Script URL…" value="">
+        <button class="drive-btn local-export" style="margin-top:4px;font-size:10px;" onclick="driveSaveUrl()">💾 Save URL</button>
+        <button class="drive-btn export" style="margin-top:6px;" onclick="driveExport()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Save to Drive
+        </button>
+        <button class="drive-btn import" style="margin-top:4px;" onclick="driveImport()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/></svg>
+          Load from Drive
+        </button>
+        <div style="font-size:10px;color:#888;margin-top:6px;line-height:1.5;">
+          💡 One-time setup: go to <b>script.google.com</b>, paste the Apps Script code, deploy as Web App, copy the URL here.
+        </div>
+      </div>
+
+      <div id="driveStatus" class="drive-status"></div>
+    </div>
+  </div>
   <div class="rsep"></div>
   <div class="mp-wrap">
     <button class="rb" id="marginBtn" onclick="toggleMarginPanel()" title="Adjust page margins" style="color:#5a3a8a;font-weight:600;">
@@ -347,6 +438,7 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   <div class="status-bar">
     <span id="wordCount">Words: 0</span>
     <span id="charCount">Characters: 0</span>
+    <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#888;" id="autosaveLabel">Auto-saved<span class="autosave-dot" id="autosaveDot"></span></span>
     <div class="status-right">
       <span id="pageCount">Pages: 1</span>
       <div class="zoom-ctrl">
@@ -967,6 +1059,11 @@ function renderAllLatex() {
   const primary = document.getElementById('columnsArea');
   primary.innerHTML = divLines;
 
+  // ── Store pre-render source so save/restore preserves LaTeX ──────────
+  // We save the HTML BEFORE MathJax converts $…$ to SVG.
+  // collectState will use this instead of innerHTML.
+  primary.dataset.latexSource = divLines;
+
   updateCounts();
   setTimeout(() => {
     reflowPages();
@@ -1264,8 +1361,8 @@ async function savePDF() {
     let embeddedFontCSS = '';
     if (isUrdu) {
       embeddedFontCSS = await _fetchFontB64(
-        'https://cdn.jsdelivr.net/npm/jameel-noori/fonts/jameel-noori-nastaleeq4.woff2',
-        'JameelNooriNastaliq', 'woff2'
+        '../fonts/Jameel Noori Nastaleeq.ttf',
+        'JameelNooriNastaliq', 'truetype'
       );
     }
 
@@ -1592,6 +1689,301 @@ function toggleKeyboardLock() {
     svg.innerHTML = '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
   }
 }
+
+// ═══════════════════════════════════════
+// AUTO-SAVE  (localStorage — survives tab close / refresh)
+// ═══════════════════════════════════════
+const SAVE_KEY = 'shadab_editor_v1';
+let _autoSaveTimer = null;
+
+function collectState() {
+  // Save full innerHTML of every page's columns-area + info inputs
+  const pages = [...document.querySelectorAll('.page')];
+  const data = {
+    v: 2,
+    ts: Date.now(),
+    headline: document.querySelector('.headline')?.innerHTML || '',
+    pages: pages.map(p => {
+      const area = p.querySelector('.columns-area');
+      return {
+        id: p.id,
+        // Prefer pre-render source (has $…$ intact) over post-MathJax SVG
+        html: area?.dataset.latexSource || area?.innerHTML || '',
+        hasLatex: !!(area?.dataset.latexSource)
+      };
+    }),
+    inputs: {},
+    font: document.getElementById('fontFamily')?.value || '',
+    fontSize: document.getElementById('fontSize')?.value || '10',
+  };
+  document.querySelectorAll('.info-input').forEach((el, i) => {
+    data.inputs[el.placeholder || i] = el.value;
+  });
+  return data;
+}
+
+function applyState(data) {
+  if (!data || data.v < 2) return false;
+  if (data.headline !== undefined) {
+    const h = document.querySelector('.headline');
+    if (h) h.innerHTML = data.headline;
+  }
+  // Restore page 1 columns area
+  const p1area = document.getElementById('columnsArea');
+  if (p1area && data.pages?.[0]) {
+    p1area.innerHTML = data.pages[0].html;
+    // If this was pre-render LaTeX source, store it back and re-typeset
+    if (data.pages[0].hasLatex) {
+      p1area.dataset.latexSource = data.pages[0].html;
+      // Re-run MathJax once it's ready
+      if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+        MathJax.typesetPromise([p1area]).catch(e => console.warn('MathJax restore error:', e));
+      } else {
+        // MathJax not yet loaded — wait for it
+        window.addEventListener('load', () => {
+          if (MathJax?.typesetPromise) MathJax.typesetPromise([p1area]).catch(()=>{});
+        }, { once: true });
+      }
+    }
+  }
+  // Restore info inputs
+  document.querySelectorAll('.info-input').forEach((el) => {
+    const val = data.inputs?.[el.placeholder];
+    if (val !== undefined) el.value = val;
+  });
+  if (data.font) { document.getElementById('fontFamily').value = data.font; applyFont(data.font); }
+  if (data.fontSize) { document.getElementById('fontSize').value = data.fontSize; applyFontSize(data.fontSize); }
+  return true;
+}
+
+function setAutosaveDot(state) {
+  const dot = document.getElementById('autosaveDot');
+  const lbl = document.getElementById('autosaveLabel');
+  if (!dot) return;
+  dot.className = 'autosave-dot' + (state === 'saving' ? ' saving' : state === 'error' ? ' error' : '');
+  if (lbl) lbl.title = state === 'ok' ? 'Auto-saved to browser storage' : state === 'saving' ? 'Saving…' : 'Save error';
+}
+
+function autoSave() {
+  try {
+    setAutosaveDot('saving');
+    const json = JSON.stringify(collectState());
+    localStorage.setItem(SAVE_KEY, json);
+    setAutosaveDot('ok');
+  } catch(e) {
+    setAutosaveDot('error');
+    console.warn('AutoSave failed:', e);
+  }
+}
+
+function scheduleAutoSave() {
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(autoSave, 1500);
+}
+
+function localSaveNow() {
+  autoSave();
+  setDriveStatus('✅ Saved to browser storage.');
+}
+
+function localLoad() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) { setDriveStatus('⚠️ No saved data found.'); return; }
+    const data = JSON.parse(raw);
+    document.querySelectorAll('.page-cont').forEach(p => p.remove());
+    if (applyState(data)) {
+      setDriveStatus('✅ Restored. ' + new Date(data.ts).toLocaleString());
+      setTimeout(reflowPages, 300);
+    } else {
+      setDriveStatus('⚠️ Saved data format not recognised.');
+    }
+  } catch(e) { setDriveStatus('❌ Error loading: ' + e.message); }
+}
+
+function localClear() {
+  if (!confirm('Clear all browser-saved data?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  setDriveStatus('🗑️ Cleared.');
+}
+
+// Auto-save on every edit
+document.addEventListener('input', e => {
+  if (e.target.closest('.columns-area') || e.target.closest('.info-input') || e.target.closest('.headline')) {
+    // If user edits after a LaTeX render, the latexSource is stale — clear it
+    const area = e.target.closest('.columns-area');
+    if (area && area.dataset.latexSource) delete area.dataset.latexSource;
+    scheduleAutoSave();
+  }
+});
+
+// Restore on load — wait for MathJax to be ready before re-typesetting
+window.addEventListener('load', () => {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data && data.v === 2 && data.pages?.[0]?.html) {
+      document.querySelectorAll('.page-cont').forEach(p => p.remove());
+      applyState(data);
+      setTimeout(reflowPages, 400);
+      setAutosaveDot('ok');
+    }
+  } catch(e) { console.warn('Auto-restore failed:', e); }
+});
+
+// ═══════════════════════════════════════
+// EXPORT / IMPORT  .shadab file
+// Stores full HTML with UTF-8 BOM so encoding is always preserved
+// ═══════════════════════════════════════
+function exportFile() {
+  try {
+    const state = collectState();
+    // Wrap in a self-contained JSON envelope
+    const envelope = {
+      app: 'ShadabPageEditor',
+      version: 2,
+      exported: new Date().toISOString(),
+      state
+    };
+    const json = JSON.stringify(envelope, null, 2);
+    // UTF-8 BOM ensures any editor/importer sees correct encoding
+    const bom  = '\uFEFF';
+    const blob = new Blob([bom + json], { type: 'application/json;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'shadab_' + new Date().toISOString().slice(0,10) + '.shadab';
+    a.click();
+    URL.revokeObjectURL(url);
+    setDriveStatus('✅ File downloaded.');
+  } catch(e) { setDriveStatus('❌ Export failed: ' + e.message); }
+}
+
+function importFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  setDriveStatus('⏳ Reading file…');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      // Strip BOM if present
+      let text = e.target.result.replace(/^\uFEFF/, '');
+      const envelope = JSON.parse(text);
+      const data = envelope.state || envelope; // support both formats
+      document.querySelectorAll('.page-cont').forEach(p => p.remove());
+      if (applyState(data)) {
+        setTimeout(reflowPages, 300);
+        autoSave(); // persist to localStorage too
+        setDriveStatus('✅ Imported: ' + file.name);
+      } else {
+        setDriveStatus('⚠️ File format not recognised.');
+      }
+    } catch(err) { setDriveStatus('❌ Import failed: ' + err.message); }
+    evt.target.value = ''; // reset input
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ═══════════════════════════════════════
+// GOOGLE DRIVE  (Picker API + Drive REST v3)
+// User must paste their own Client ID in the prompt the first time
+// ═══════════════════════════════════════
+// ═══════════════════════════════════════
+// GOOGLE DRIVE  via Apps Script Web App
+// No OAuth, no Client ID — just your Gmail
+// ═══════════════════════════════════════
+function getScriptUrl() {
+  const url = localStorage.getItem('shadab_script_url') || '';
+  const input = document.getElementById('scriptUrl');
+  if (input && !input.value && url) input.value = url;
+  return url;
+}
+
+function driveSaveUrl() {
+  const input = document.getElementById('scriptUrl');
+  const url = input ? input.value.trim() : '';
+  if (!url) { setDriveStatus('⚠️ Paste your Apps Script URL first.'); return; }
+  localStorage.setItem('shadab_script_url', url);
+  setDriveStatus('✅ URL saved!');
+}
+
+// Load saved URL into input on panel open
+function toggleDrivePanel() {
+  const panel = document.getElementById('drivePanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    const saved = localStorage.getItem('shadab_script_url') || '';
+    const input = document.getElementById('scriptUrl');
+    if (input && saved) input.value = saved;
+  }
+}
+
+async function driveExport() {
+  const url = localStorage.getItem('shadab_script_url') || document.getElementById('scriptUrl')?.value.trim();
+  if (!url) { setDriveStatus('⚠️ No Apps Script URL set.'); return; }
+  try {
+    setDriveStatus('⏳ Saving to Drive…');
+    const envelope = {
+      app: 'ShadabPageEditor', version: 2,
+      exported: new Date().toISOString(),
+      state: collectState()
+    };
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(envelope),
+      headers: { 'Content-Type': 'text/plain' } // Apps Script needs text/plain for doPost
+    });
+    const json = await res.json();
+    if (json.success) {
+      setDriveStatus('✅ Saved to Google Drive!');
+      autoSave();
+    } else {
+      setDriveStatus('❌ ' + (json.error || 'Unknown error'));
+    }
+  } catch(e) { setDriveStatus('❌ ' + e.message); }
+}
+
+async function driveImport() {
+  const url = localStorage.getItem('shadab_script_url') || document.getElementById('scriptUrl')?.value.trim();
+  if (!url) { setDriveStatus('⚠️ No Apps Script URL set.'); return; }
+  try {
+    setDriveStatus('⏳ Loading from Drive…');
+    const res  = await fetch(url);
+    const text = (await res.text()).replace(/^\uFEFF/, '');
+    const envelope = JSON.parse(text);
+    const data = envelope.state || envelope;
+    document.querySelectorAll('.page-cont').forEach(p => p.remove());
+    if (applyState(data)) {
+      setTimeout(reflowPages, 300);
+      autoSave();
+      const d = envelope.exported ? new Date(envelope.exported).toLocaleString() : '';
+      setDriveStatus('✅ Loaded!' + (d ? ' Saved: ' + d : ''));
+    } else {
+      setDriveStatus('⚠️ File format not recognised.');
+    }
+  } catch(e) { setDriveStatus('❌ ' + e.message); }
+}
+
+
+function setDriveStatus(msg) {
+  const el = document.getElementById('driveStatus');
+  if (el) el.textContent = msg;
+}
+
+function toggleDrivePanel() {
+  const panel = document.getElementById('drivePanel');
+  panel.classList.toggle('open');
+}
+
+// Close drive panel on outside click
+document.addEventListener('click', e => {
+  const panel = document.getElementById('drivePanel');
+  const btn   = document.getElementById('driveBtn');
+  if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
 </script>
 </body>
 </html>
