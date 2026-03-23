@@ -88,6 +88,8 @@ async function syncFonts(force) {
       opt.value = `'${fam}',serif`;
       opt.textContent = fam;
       select.appendChild(opt);
+      // Track JNN/Jameel font for Urdu mode
+      if (/jnn|jameel/i.test(fam)) _jnnFontValue = `'${fam}',serif`;
     });
 
     _fontsSynced = true;
@@ -214,8 +216,10 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   direction:rtl; text-align:right;
   font-family:'JNN','JameelNooriNastaliq',serif;
   line-height:2.2;
+  letter-spacing:0 !important;
+  word-spacing:0 !important;
 }
-.urdu-mode div,.urdu-mode p { direction:rtl; unicode-bidi:embed; }
+.urdu-mode div,.urdu-mode p { direction:rtl; unicode-bidi:embed; letter-spacing:0 !important; word-spacing:0 !important; }
 
 /* ── MARGIN PANEL ── */
 .margin-panel {
@@ -918,47 +922,58 @@ function applyFontSize(s) {
 // URDU RTL MODE
 // ═══════════════════════════════════════
 let urduMode = false;
-let _prevFont = ''; // store font before urdu activated
-
-const URDU_FONT = "'JNN', 'JameelNooriNastaliq', serif";
+let _prevFont = '';
+let _jnnFontValue = ''; // exact value set after fonts load
 
 function applyUrduToArea(a) {
   a.classList.add('urdu-mode');
-  a.style.fontFamily = URDU_FONT;
-  a.style.lineHeight = '2.2';
+  const font = _jnnFontValue || "'JNN','JameelNooriNastaliq',serif";
+  a.style.fontFamily    = font;
+  a.style.lineHeight    = '2.2';
+  a.style.letterSpacing = '0';
+  a.style.wordSpacing   = '0';
   a.dir = 'rtl';
 }
 function removeUrduFromArea(a) {
   a.classList.remove('urdu-mode');
-  a.style.fontFamily = _prevFont || '';
-  a.style.lineHeight = '';
+  a.style.fontFamily    = _prevFont || '';
+  a.style.lineHeight    = '';
+  a.style.letterSpacing = '';
+  a.style.wordSpacing   = '';
   a.dir = 'ltr';
 }
 
-function toggleUrdu() {
+async function toggleUrdu() {
   urduMode = !urduMode;
+
+  // Ensure fonts are loaded before applying
+  if (urduMode && !_fontsSynced) {
+    await syncFonts();
+  }
 
   const sel = document.getElementById('fontFamily');
 
   if (urduMode) {
-    // Save current font before switching
     _prevFont = sel.value || '';
 
-    // Ensure JNN option exists in dropdown
-    if (!sel.querySelector('option[value*="JNN"]')) {
+    // Find JNN option in the loaded dropdown
+    const opts = [...sel.options];
+    const jnnOpt = opts.find(o => /jnn/i.test(o.textContent) || /jameel/i.test(o.textContent));
+    if (jnnOpt) {
+      _jnnFontValue = jnnOpt.value;
+      sel.value = jnnOpt.value;
+    } else {
+      // Add it manually if not found
       const opt = document.createElement('option');
       opt.value = "'JNN',serif";
       opt.textContent = 'JNN';
       sel.appendChild(opt);
+      sel.value = "'JNN',serif";
+      _jnnFontValue = "'JNN',serif";
     }
-    sel.value = "'JNN',serif";
   } else {
-    // Reset dropdown to — select —
     sel.value = '';
-    // Restore previous font on areas
-    document.querySelectorAll('.columns-area').forEach(a => {
-      if (_prevFont) a.style.fontFamily = _prevFont;
-    });
+    _jnnFontValue = '';
   }
 
   document.querySelectorAll('.columns-area').forEach(a => {
@@ -1541,8 +1556,9 @@ async function savePDF() {
       .cont-label{font-size:13px;font-family:'EB Garamond',serif;color:#888;text-align:center;margin-bottom:6px;font-style:italic;}
       .columns-area{column-count:3;column-gap:14px;column-rule:1px solid #ccc;column-fill:auto;overflow:hidden;
         font-family:${aFont};font-size:${aSize};line-height:${aLH};color:#111;word-break:break-word;
-        text-align:${isUrdu?'right':'justify'};direction:${aDir};}
-      .columns-area div,.columns-area p{margin:0;min-height:1lh;}
+        text-align:${isUrdu?'right':'justify'};direction:${aDir};
+        ${isUrdu ? 'letter-spacing:0;word-spacing:0;' : ''}}
+      .columns-area div,.columns-area p{margin:0;min-height:1lh;${isUrdu ? 'letter-spacing:0;word-spacing:0;' : ''}}
       b,strong{font-weight:700;}i,em{font-style:italic;}u{text-decoration:underline;}
       hr{border:none;border-top:1px solid #aaa;margin:4px 0;}
       ol{margin:2px 0 2px 18px;padding:0;}ul{margin:2px 0 2px 18px;padding:0;}
