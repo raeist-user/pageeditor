@@ -5,30 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shadab Page Editor</title>
 
-<!-- Fonts — auto-detected from GitHub fonts/ folder -->
+<!-- Fonts — synced from GitHub fonts/ folder on demand -->
 <style id="fontFaceStyle"></style>
 <script>
 const GITHUB_USER   = 'raeist-user';
 const GITHUB_REPO   = 'pageeditor';
 const GITHUB_BRANCH = 'main';
-const GITHUB_TOKEN  = ''; // ← paste token if repo is private
+const GITHUB_TOKEN  = ''; // leave empty for public repos
 
-// Derive a CSS font-family name from filename
-// e.g. "Jameel Noori Nastaleeq.ttf" → "Jameel Noori Nastaleeq"
-//      "EBGaramond-Regular.ttf"     → "EB Garamond"
+let _fontsSynced = false;
+let _fontsSyncing = false;
+
 function familyFromFile(name) {
   const base = name.replace(/\.(ttf|otf|woff2?)$/i, '');
-  // Split on - or _ and drop weight/style words
   const weightWords = /^(regular|bold|italic|medium|light|semibold|extrabold|thin|black|bolditalic)$/i;
   const parts = base.split(/[-_]/).filter(p => !weightWords.test(p));
-  // Insert spaces before capitals in camelCase  e.g. EBGaramond → EB Garamond
   return parts.join(' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
 }
-
-function styleFromFile(name) {
-  return /italic/i.test(name) ? 'italic' : 'normal';
-}
-
+function styleFromFile(name)  { return /italic/i.test(name) ? 'italic' : 'normal'; }
 function weightFromFile(name) {
   if (/thin/i.test(name))      return 100;
   if (/light/i.test(name))     return 300;
@@ -39,7 +33,6 @@ function weightFromFile(name) {
   if (/bold/i.test(name))      return 700;
   return 400;
 }
-
 function formatFromFile(name) {
   if (/\.woff2$/i.test(name)) return 'woff2';
   if (/\.woff$/i.test(name))  return 'woff';
@@ -47,33 +40,35 @@ function formatFromFile(name) {
   return 'truetype';
 }
 
-(async function detectAndLoadFonts() {
+async function syncFonts(force) {
+  if (_fontsSyncing) return;
+  if (_fontsSynced && !force) return;
+  _fontsSyncing = true;
+
+  const select = document.getElementById('fontFamily');
+  select.innerHTML = '<option value="">Loading…</option>';
+
   try {
     const headers = { 'Accept': 'application/vnd.github.v3+json' };
     if (GITHUB_TOKEN) headers['Authorization'] = 'token ' + GITHUB_TOKEN;
 
-    // List contents of fonts/ folder
     const res = await fetch(
       `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/fonts?ref=${GITHUB_BRANCH}`,
       { headers }
     );
-    if (!res.ok) throw new Error('Could not list fonts folder: HTTP ' + res.status);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const files = await res.json();
 
-    // Filter to font files only
     const fontFiles = files.filter(f =>
       f.type === 'file' && /\.(ttf|otf|woff2?)$/i.test(f.name)
     );
-
-    if (!fontFiles.length) { console.warn('No font files found in fonts/'); return; }
-
-    // Fetch each font and build @font-face
-    const rawHeaders = { 'Accept': 'application/vnd.github.v3.raw' };
-    if (GITHUB_TOKEN) rawHeaders['Authorization'] = 'token ' + GITHUB_TOKEN;
+    if (!fontFiles.length) throw new Error('No font files found in fonts/');
 
     const results = await Promise.allSettled(
       fontFiles.map(async f => {
-        const r = await fetch(f.download_url, { headers: rawHeaders });
+        const r = await fetch(f.download_url, {
+          headers: GITHUB_TOKEN ? { 'Authorization': 'token ' + GITHUB_TOKEN } : {}
+        });
         if (!r.ok) throw new Error(f.name + ' HTTP ' + r.status);
         const blob = await r.blob();
         const b64  = await new Promise(ok => {
@@ -82,48 +77,45 @@ function formatFromFile(name) {
           fr.readAsDataURL(blob);
         });
         return {
-          family : familyFromFile(f.name),
-          style  : styleFromFile(f.name),
-          weight : weightFromFile(f.name),
-          format : formatFromFile(f.name),
+          name  : f.name,
+          family: familyFromFile(f.name),
+          style : styleFromFile(f.name),
+          weight: weightFromFile(f.name),
+          format: formatFromFile(f.name),
           b64
         };
       })
     );
 
-    const css = results.map((r, i) => {
-      if (r.status === 'rejected') {
-        console.warn('Font skipped:', fontFiles[i].name, r.reason);
-        return '';
-      }
+    const css = results.map(r => {
+      if (r.status === 'rejected') return '';
       const { family, style, weight, format, b64 } = r.value;
       return `@font-face{font-family:'${family}';font-style:${style};font-weight:${weight};src:url('${b64}') format('${format}');}`;
     }).filter(Boolean).join('\n');
 
     document.getElementById('fontFaceStyle').textContent = css;
 
-    // Rebuild font dropdown with whatever was found
+    // Rebuild dropdown
     const seen = new Set();
-    const select = document.getElementById('fontFamily');
-    if (select) {
-      select.innerHTML = '';
-      results.forEach(r => {
-        if (r.status !== 'fulfilled') return;
-        const fam = r.value.family;
-        if (seen.has(fam)) return;
-        seen.add(fam);
-        const opt = document.createElement('option');
-        opt.value = `'${fam}',serif`;
-        opt.textContent = fam;
-        select.appendChild(opt);
-      });
-    }
+    select.innerHTML = '<option value="">— select —</option>';
+    results.forEach(r => {
+      if (r.status !== 'fulfilled') return;
+      const fam = r.value.family;
+      if (seen.has(fam)) return;
+      seen.add(fam);
+      const opt = document.createElement('option');
+      opt.value = `'${fam}',serif`;
+      opt.textContent = fam;
+      select.appendChild(opt);
+    });
 
-    console.log('Fonts loaded:', [...seen].join(', '));
+    _fontsSynced = true;
   } catch(e) {
-    console.warn('Font loader error:', e.message);
+    select.innerHTML = '<option value="">⚠ Failed</option>';
+    console.warn('Font sync error:', e.message);
   }
-})();
+  _fontsSyncing = false;
+}
 </script>
 <!-- MathJax (LaTeX rendering) -->
 <script>
@@ -364,9 +356,8 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 
 <!-- ═══ ROW 1: Font · Font Size · Align · Bullets ═══ -->
 <div class="ribbon">
-  <select class="rb-sel" style="width:80px;" id="fontFamily" onchange="applyFont(this.value)">
-    <option value="'EB Garamond',serif">EB Garamond</option>
-    <option value="JameelNooriNastaliq,serif">Jameel Nastaliq</option>
+  <select class="rb-sel" style="width:80px;" id="fontFamily" onchange="applyFont(this.value)" onfocus="syncFonts()">
+    <option value="">Fonts…</option>
   </select>
   <input type="number" class="fsize" id="fontSize" value="10" min="6" max="72" onchange="applyFontSize(this.value)" title="pt">
   <div class="rsep"></div>
