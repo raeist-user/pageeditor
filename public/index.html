@@ -5,326 +5,232 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shadab Page Editor</title>
 
-<!-- Fonts — synced from GitHub fonts/ folder on demand -->
 <style id="fontFaceStyle"></style>
 <script>
 const GITHUB_USER   = 'raeist-user';
 const GITHUB_REPO   = 'pageeditor';
 const GITHUB_BRANCH = 'main';
 const GITHUB_TOKEN  = '';
-
 const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/fonts/`;
-
 let _fontsSynced  = false;
 let _fontsSyncing = false;
-
-function familyFromFile(name) {
-  const base = name.replace(/\.(ttf|otf|woff2?)$/i, '');
-  const weightWords = /^(regular|bold|italic|medium|light|semibold|extrabold|thin|black|bolditalic)$/i;
-  const parts = base.split(/[-_ ]/).filter(p => !weightWords.test(p));
-  return parts.join(' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
-}
-function styleFromFile(name)  { return /italic/i.test(name) ? 'italic' : 'normal'; }
-function weightFromFile(name) {
-  if (/thin/i.test(name))      return 100;
-  if (/light/i.test(name))     return 300;
-  if (/medium/i.test(name))    return 500;
-  if (/semibold/i.test(name))  return 600;
-  if (/extrabold/i.test(name)) return 800;
-  if (/black/i.test(name))     return 900;
-  if (/bold/i.test(name))      return 700;
-  return 400;
-}
-function formatFromFile(name) {
-  if (/\.woff2$/i.test(name)) return 'woff2';
-  if (/\.woff$/i.test(name))  return 'woff';
-  if (/\.otf$/i.test(name))   return 'opentype';
-  return 'truetype';
-}
-
-async function syncFonts(force) {
-  if (_fontsSyncing) return;
-  if (_fontsSynced && !force) return;
-  _fontsSyncing = true;
-
-  const select = document.getElementById('fontFamily');
-  select.innerHTML = '<option value="">Loading…</option>';
-
-  try {
-    const headers = { 'Accept': 'application/vnd.github.v3+json' };
-    if (GITHUB_TOKEN) headers['Authorization'] = 'token ' + GITHUB_TOKEN;
-
-    const res = await fetch(
-      `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/fonts?ref=${GITHUB_BRANCH}`,
-      { headers }
-    );
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const files = await res.json();
-
-    const fontFiles = files.filter(f =>
-      f.type === 'file' && /\.(ttf|otf|woff2?)$/i.test(f.name)
-    );
-    if (!fontFiles.length) throw new Error('No font files in fonts/');
-
-    // Use raw URL directly in @font-face — no base64 conversion needed
-    const css = fontFiles.map(f => {
-      const url    = RAW_BASE + encodeURIComponent(f.name);
-      const family = familyFromFile(f.name);
-      const style  = styleFromFile(f.name);
-      const weight = weightFromFile(f.name);
-      const format = formatFromFile(f.name);
-      return `@font-face{font-family:'${family}';font-style:${style};font-weight:${weight};src:url('${url}') format('${format}');}`;
-    }).join('\n');
-
-    document.getElementById('fontFaceStyle').textContent = css;
-
-    const seen = new Set();
-    select.innerHTML = '<option value="">— select —</option>';
-    fontFiles.forEach(f => {
-      const fam = familyFromFile(f.name);
-      if (seen.has(fam)) return;
-      seen.add(fam);
-      const opt = document.createElement('option');
-      opt.value = `'${fam}',serif`;
-      opt.textContent = fam;
-      select.appendChild(opt);
-      // Track JNN/Jameel font for Urdu mode
-      if (/jnn|jameel/i.test(fam)) _jnnFontValue = `'${fam}',serif`;
-    });
-
-    _fontsSynced = true;
-  } catch(e) {
-    select.innerHTML = '<option value="">⚠ Failed</option>';
-    console.warn('Font sync error:', e.message);
-  }
-  _fontsSyncing = false;
+function familyFromFile(name){const base=name.replace(/\.(ttf|otf|woff2?)$/i,'');const weightWords=/^(regular|bold|italic|medium|light|semibold|extrabold|thin|black|bolditalic)$/i;const parts=base.split(/[-_ ]/).filter(p=>!weightWords.test(p));return parts.join(' ').replace(/([a-z])([A-Z])/g,'$1 $2').trim();}
+function styleFromFile(name){return /italic/i.test(name)?'italic':'normal';}
+function weightFromFile(name){if(/thin/i.test(name))return 100;if(/light/i.test(name))return 300;if(/medium/i.test(name))return 500;if(/semibold/i.test(name))return 600;if(/extrabold/i.test(name))return 800;if(/black/i.test(name))return 900;if(/bold/i.test(name))return 700;return 400;}
+function formatFromFile(name){if(/\.woff2$/i.test(name))return 'woff2';if(/\.woff$/i.test(name))return 'woff';if(/\.otf$/i.test(name))return 'opentype';return 'truetype';}
+async function syncFonts(force){
+  if(_fontsSyncing)return;if(_fontsSynced&&!force)return;_fontsSyncing=true;
+  const select=document.getElementById('fontFamily');select.innerHTML='<option value="">Loading…</option>';
+  try{
+    const headers={'Accept':'application/vnd.github.v3+json'};if(GITHUB_TOKEN)headers['Authorization']='token '+GITHUB_TOKEN;
+    const res=await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/fonts?ref=${GITHUB_BRANCH}`,{headers});
+    if(!res.ok)throw new Error('HTTP '+res.status);const files=await res.json();
+    const fontFiles=files.filter(f=>f.type==='file'&&/\.(ttf|otf|woff2?)$/i.test(f.name));
+    if(!fontFiles.length)throw new Error('No font files in fonts/');
+    const css=fontFiles.map(f=>{const url=RAW_BASE+encodeURIComponent(f.name);const family=familyFromFile(f.name);const style=styleFromFile(f.name);const weight=weightFromFile(f.name);const format=formatFromFile(f.name);return `@font-face{font-family:'${family}';font-style:${style};font-weight:${weight};src:url('${url}') format('${format}');}`;}).join('\n');
+    document.getElementById('fontFaceStyle').textContent=css;
+    const seen=new Set();select.innerHTML='<option value="">— select —</option>';
+    fontFiles.forEach(f=>{const fam=familyFromFile(f.name);if(seen.has(fam))return;seen.add(fam);const opt=document.createElement('option');opt.value=`'${fam}',serif`;opt.textContent=fam;select.appendChild(opt);if(/jnn|jameel/i.test(fam))_jnnFontValue=`'${fam}',serif`;});
+    _fontsSynced=true;
+  }catch(e){select.innerHTML='<option value="">⚠ Failed</option>';console.warn('Font sync error:',e.message);}
+  _fontsSyncing=false;
 }
 </script>
-<!-- MathJax (LaTeX rendering) -->
 <script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']]
-    },
-    svg: { fontCache: 'global' },
-    startup: { typeset: false }
-  };
+window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'},startup:{typeset:false}};
 </script>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-<!-- DOCX export -->
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
-<!-- PDF export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-:root {
-  --bg:#e8e8e8; --tb:#f3f3f3; --tb-border:#d0d0d0;
-  --hover:#e0e0e0; --active:#c8d8f0;
-  --page:#ffffff; --shadow:0 2px 12px rgba(0,0,0,.18);
-  --accent:#2563a8; --text:#1a1a1a; --input:#ccc;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#e8e8e8;--tb:#f3f3f3;--tb-border:#d0d0d0;
+  --hover:#e0e0e0;--active:#c8d8f0;
+  --page:#ffffff;--shadow:0 2px 12px rgba(0,0,0,.18);
+  --accent:#2563a8;--text:#1a1a1a;--input:#ccc;
 }
-html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; }
+html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
 
+/* ── FILENAME BAR ── */
+.filename-bar{
+  background:linear-gradient(135deg,#1e50a2,#2563a8);
+  border-bottom:1px solid #1a4a96;
+  padding:4px 12px;
+  display:flex;align-items:center;gap:10px;
+  flex-shrink:0;
+}
+.filename-bar .fb-icon{color:rgba(255,255,255,.7);font-size:13px;flex-shrink:0;}
+.doc-title-input{
+  background:transparent;border:none;
+  border-bottom:1.5px solid rgba(255,255,255,.35);
+  color:#fff;font-family:'Nunito Sans',sans-serif;
+  font-size:13px;font-weight:600;letter-spacing:.2px;
+  padding:1px 5px;outline:none;width:260px;
+  transition:border-bottom-color .2s;
+}
+.doc-title-input::placeholder{color:rgba(255,255,255,.5);}
+.doc-title-input:focus{border-bottom-color:#fff;}
+.fb-hint{font-size:10px;color:rgba(255,255,255,.45);margin-left:auto;white-space:nowrap;}
 
 /* ── RIBBON ── */
-.ribbon { background:var(--tb); border-bottom:1px solid var(--tb-border); padding:4px 8px; display:flex; align-items:center; flex-wrap:wrap; gap:2px; }
-.rsep { width:1px; height:22px; background:#d0d0d0; margin:0 4px; }
-.rb { height:26px; padding:0 7px; border:none; background:transparent; border-radius:3px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:4px; color:#333; font-family:'Nunito Sans',sans-serif; transition:background .12s; white-space:nowrap; }
-.rb:hover{background:var(--hover);} .rb:active,.rb.on{background:var(--active);}
+.ribbon{background:var(--tb);border-bottom:1px solid var(--tb-border);padding:3px 8px;display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+.rsep{width:1px;height:22px;background:#d0d0d0;margin:0 4px;}
+.rb{height:26px;padding:0 7px;border:none;background:transparent;border-radius:3px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;color:#333;font-family:'Nunito Sans',sans-serif;transition:background .12s;white-space:nowrap;}
+.rb:hover{background:var(--hover);}.rb:active,.rb.on{background:var(--active);}
 .rb svg{width:14px;height:14px;flex-shrink:0;}
-.rb-sel { height:26px; border:1px solid var(--input); border-radius:3px; background:#fff; font-size:12px; padding:0 6px; cursor:pointer; color:#333; font-family:'Nunito Sans',sans-serif; outline:none; }
+.rb-sel{height:26px;border:1px solid var(--input);border-radius:3px;background:#fff;font-size:12px;padding:0 6px;cursor:pointer;color:#333;font-family:'Nunito Sans',sans-serif;outline:none;}
 .rb-sel:focus{border-color:var(--accent);}
-.fsize { width:42px; height:26px; border:1px solid var(--input); border-radius:3px; text-align:center; font-size:12px; padding:0 4px; outline:none; font-family:'Nunito Sans',sans-serif; }
+.fsize{width:42px;height:26px;border:1px solid var(--input);border-radius:3px;text-align:center;font-size:12px;padding:0 4px;outline:none;font-family:'Nunito Sans',sans-serif;}
 .fsize:focus{border-color:var(--accent);}
 
-/* ── SMART FORMAT — menu bar buttons ── */
-.mf-sep { width:1px; height:18px; background:#c0c0c0; margin:0 3px; align-self:center; }
-.mf-btn { height:22px; padding:0 8px; border:1px solid var(--input); background:#fff; border-radius:3px; cursor:pointer; font-size:11.5px; font-family:'Nunito Sans',sans-serif; color:#333; font-weight:600; display:flex; align-items:center; gap:3px; transition:background .12s; white-space:nowrap; }
-.mf-btn:hover{background:var(--hover);border-color:#aaa;} .mf-btn:active{background:var(--active);}
+/* ── NAV RIBBON (Row 4) ── */
+.nav-ribbon{background:#f0f0f0;border-bottom:2px solid #c8c8c8;padding:3px 8px;display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.pg-nav-r{width:22px;height:22px;background:transparent;border:1px solid #bbb;border-radius:3px;color:#555;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s,color .12s;}
+.pg-nav-r:hover{background:#e0e0e0;color:#222;border-color:#999;}
+.pg-btn-row{display:flex;gap:3px;align-items:center;overflow-x:auto;max-width:280px;flex-shrink:0;}
+.pg-btn-row::-webkit-scrollbar{height:2px;}.pg-btn-row::-webkit-scrollbar-thumb{background:#aaa;}
+.pg-btn2{min-width:24px;height:22px;border:1.5px solid #bbb;background:#fff;color:#555;border-radius:3px;font-size:11px;font-family:'Nunito Sans',sans-serif;cursor:pointer;padding:0 6px;transition:background .12s,border-color .12s;white-space:nowrap;flex-shrink:0;}
+.pg-btn2:hover{background:#e8f0fb;border-color:var(--accent);color:var(--accent);}
+.pg-btn2.active{background:var(--accent);border-color:#1a52a8;color:#fff;}
+.page-info-lbl{font-size:11px;color:#666;white-space:nowrap;padding:0 4px;font-family:'Nunito Sans',sans-serif;}
+
+/* ── SMART FORMAT BUTTONS ── */
+.mf-sep{width:1px;height:18px;background:#c0c0c0;margin:0 3px;align-self:center;}
+.mf-btn{height:22px;padding:0 8px;border:1px solid var(--input);background:#fff;border-radius:3px;cursor:pointer;font-size:11.5px;font-family:'Nunito Sans',sans-serif;color:#333;font-weight:600;display:flex;align-items:center;gap:3px;transition:background .12s;white-space:nowrap;}
+.mf-btn:hover{background:var(--hover);border-color:#aaa;}.mf-btn:active{background:var(--active);}
 .mf-btn.reset-btn{color:#7a4a20;border-color:#c8a87a;background:#fff8f0;}
 .mf-btn.reset-btn:hover{background:#ffeedd;}
 
 /* ── RULER ── */
-.ruler { height:20px; background:#f8f8f8; border-bottom:1px solid #ddd; overflow:hidden; }
-.ruler canvas { display:block; width:100%; height:100%; }
+.ruler{height:20px;background:#f8f8f8;border-bottom:1px solid #ddd;overflow:hidden;}
+.ruler canvas{display:block;width:100%;height:100%;}
 
 /* ── LAYOUT ── */
-.app { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
-.toolbar-area { flex-shrink:0; }
-.main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-.editor-scroll { flex:1; overflow:auto; background:var(--bg); position:relative; }
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+.toolbar-area{flex-shrink:0;}
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.editor-scroll{flex:1;overflow:auto;background:var(--bg);position:relative;}
 .editor-scroll::-webkit-scrollbar{width:8px;height:8px;}
 .editor-scroll::-webkit-scrollbar-track{background:#d8d8d8;}
 .editor-scroll::-webkit-scrollbar-thumb{background:#aaa;border-radius:4px;}
 
 /* ── ZOOM CONTAINERS ── */
-/* zoom-outer fills the scroll area and is sized by JS to the true scaled dimensions */
-.zoom-outer {
-  position: relative;
-  /* width & height set by JS */
-}
-/* zoom-wrapper is absolutely placed inside outer, scaled from top-left */
-.zoom-wrapper {
-  position: absolute;
-  top: 0; left: 0;
-  display: flex;
-  flex-direction: column;   /* pages stack top → bottom */
-  align-items: center;
-  padding: 24px 40px 48px;
-  gap: 0;
-  transform-origin: top left;
-  will-change: transform;
-}
+.zoom-outer{position:relative;}
+.zoom-wrapper{position:absolute;top:0;left:0;display:flex;flex-direction:column;align-items:center;padding:24px 40px 48px;gap:0;transform-origin:top left;will-change:transform;}
 
-/* ── PAGE (exact A4 297×210mm) ── */
-.page { width:210mm; height:297mm; background:var(--page); box-shadow:var(--shadow); padding:0.1in; position:relative; font-family:'EB Garamond',Georgia,serif; font-size:11pt; line-height:1.5; color:#111; overflow:hidden; flex-shrink:0; }
+/* ── PAGE ── */
+.page{width:210mm;height:297mm;background:var(--page);box-shadow:var(--shadow);padding:0.1in;position:relative;font-family:'EB Garamond',Georgia,serif;font-size:11pt;line-height:1.5;color:#111;overflow:hidden;flex-shrink:0;}
 
-/* Page 1 header */
-.page-header { text-align:center; margin-bottom:4px; }
-.headline { font-family:'EB Garamond',serif; font-size:15pt; font-weight:700; letter-spacing:.5px; color:#111; line-height:1.15; margin-bottom:3px; }
-.info-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px; font-family:'Nunito Sans',sans-serif; font-size:9.5pt; }
-.info-left,.info-right { display:flex; flex-direction:column; gap:4px; }
-.info-field { display:flex; align-items:center; gap:6px; }
-.info-field label { font-weight:700; color:#222; min-width:48px; font-size:9pt; }
-.info-input { border:none; border-bottom:1.5px solid #555; outline:none; font-family:'EB Garamond',serif; font-size:10pt; color:#111; background:transparent; width:120px; padding:1px 2px; transition:border-color .2s; }
+/* Page header */
+.page-header{text-align:center;margin-bottom:4px;}
+.headline{font-family:'EB Garamond',serif;font-size:15pt;font-weight:700;letter-spacing:.5px;color:#111;line-height:1.15;margin-bottom:3px;}
+.info-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;font-family:'Nunito Sans',sans-serif;font-size:9.5pt;}
+.info-left,.info-right{display:flex;flex-direction:column;gap:4px;}
+.info-field{display:flex;align-items:center;gap:6px;}
+.info-field label{font-weight:700;color:#222;min-width:48px;font-size:9pt;}
+.info-input{border:none;border-bottom:1.5px solid #555;outline:none;font-family:'EB Garamond',serif;font-size:10pt;color:#111;background:transparent;width:120px;padding:1px 2px;transition:border-color .2s;}
 .info-input:focus{border-bottom-color:var(--accent);}
 .info-input.short{width:70px;}
-.page-divider { border:none; border-top:2px solid #222; margin:6px 0 8px; }
-.page-divider.thin { border-top-width:1px; border-top-color:#999; margin:3px 0 8px; }
+.page-divider{border:none;border-top:2px solid #222;margin:6px 0 8px;}
+.page-divider.thin{border-top-width:1px;border-top-color:#999;margin:3px 0 8px;}
+.cont-label{font-size:10pt;font-family:'EB Garamond',serif;color:#888;text-align:center;margin-bottom:6px;font-style:italic;}
 
-/* Continuation page label */
-.cont-label { font-size:10pt; font-family:'EB Garamond',serif; color:#888; text-align:center; margin-bottom:6px; font-style:italic; }
+/* ── BLANK PRESET — hides header elements ── */
+.page[data-preset="blank"] .page-header,
+.page[data-preset="blank"] .info-row,
+.page[data-preset="blank"] .page-divider{display:none!important;}
+
+/* ── MIRROR MARGINS — even pages swap left/right binding offset ── */
+/* Applied programmatically via JS; class here for reference */
+.zoom-wrapper.mirror-active .page:nth-child(even){
+  /* JS overrides inline padding; this class just marks the state */
+  --mirror-active:1;
+}
 
 /* ── 3-COLUMN CONTENT AREA ── */
-.columns-area {
-  column-count:3; column-gap:14px; column-rule:1px solid #ccc; column-fill:auto;
-  overflow:hidden; outline:none;
-  font-family:'EB Garamond',serif; font-size:10.5pt; line-height:1.65; color:#111;
-  word-break:break-word; text-align:justify;
-  /* height set by JS */
+.columns-area{
+  column-count:3;column-gap:14px;column-rule:1px solid #ccc;column-fill:auto;
+  overflow:hidden;outline:none;
+  font-family:'EB Garamond',serif;font-size:10.5pt;line-height:1.65;color:#111;
+  word-break:break-word;text-align:justify;
 }
-.columns-area:empty::before { content:'Start typing or paste questions here…'; color:#bbb; font-style:italic; pointer-events:none; }
-.columns-area:focus { caret-color:var(--accent); }
-.columns-area div,.columns-area p { margin:0; min-height:1lh; break-inside:avoid; }
+.columns-area:empty::before{content:'Start typing or paste questions here…';color:#bbb;font-style:italic;pointer-events:none;}
+.columns-area:focus{caret-color:var(--accent);}
+.columns-area div,.columns-area p{margin:0;min-height:1lh;break-inside:avoid;}
+.columns-area img{max-width:100%;height:auto;display:block;margin:3px 0;break-inside:avoid;}
 
 /* RTL Urdu mode */
-.columns-area.urdu-mode {
-  direction:rtl; text-align:right;
-  font-family:'JNN','JameelNooriNastaliq',serif;
-  line-height:2.2;
-  letter-spacing:0 !important;
-  word-spacing:0 !important;
-}
-.urdu-mode div,.urdu-mode p { direction:rtl; unicode-bidi:embed; letter-spacing:0 !important; word-spacing:0 !important; }
+.columns-area.urdu-mode{direction:rtl;text-align:right;font-family:'JNN','JameelNooriNastaliq',serif;line-height:2.2;letter-spacing:0!important;word-spacing:0!important;}
+.urdu-mode div,.urdu-mode p{direction:rtl;unicode-bidi:embed;letter-spacing:0!important;word-spacing:0!important;}
 
-/* ── MARGIN PANEL ── */
-.margin-panel {
-  display: none; position: fixed;
-  background: #fff; border: 1px solid #ccc; border-radius: 6px;
-  box-shadow: 0 4px 18px rgba(0,0,0,.18);
-  padding: 12px 16px 14px; z-index: 9999; width: 220px;
-  font-family: 'Nunito Sans', sans-serif; font-size: 12px;
-}
-.margin-panel.open { display: block; }
-.margin-panel h4 { font-size: 12px; font-weight: 700; color: #333; margin-bottom: 10px; }
-.mp-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.mp-row label { color: #555; font-size: 11px; min-width: 52px; }
-.mp-row input[type=range] { flex:1; margin: 0 8px; accent-color: var(--accent); }
-.mp-row .mp-val { font-size: 11px; color: #888; min-width: 32px; text-align: right; }
-.mp-wrap { position: relative; }
-.mp-apply { margin-top: 10px; width: 100%; height: 26px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-family: 'Nunito Sans', sans-serif; font-weight: 600; }
-.mp-apply:hover { background: #1a4e96; }
-.mp-presets { display: flex; gap: 6px; margin-bottom: 10px; }
-.mp-preset { flex:1; height:22px; font-size:10px; border:1px solid #bbb; background:#f6f6f6; border-radius:3px; cursor:pointer; font-family:'Nunito Sans',sans-serif; }
-.mp-preset:hover { background:#e8f0fb; border-color:var(--accent); color:var(--accent); }
-.latex-src { display:none; }
+/* ── PANELS (shared: margin, preset, spacing, drive) ── */
+.margin-panel{display:none;position:fixed;background:#fff;border:1px solid #ccc;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:12px 16px 14px;z-index:9999;width:220px;font-family:'Nunito Sans',sans-serif;font-size:12px;}
+.margin-panel.open{display:block;}
+.margin-panel h4{font-size:12px;font-weight:700;color:#333;margin-bottom:10px;}
+.mp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.mp-row label{color:#555;font-size:11px;min-width:52px;}
+.mp-row input[type=range]{flex:1;margin:0 8px;accent-color:var(--accent);}
+.mp-row .mp-val{font-size:11px;color:#888;min-width:32px;text-align:right;}
+.mp-wrap{position:relative;}
+.mp-apply{margin-top:10px;width:100%;height:26px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-family:'Nunito Sans',sans-serif;font-weight:600;}
+.mp-apply:hover{background:#1a4e96;}
+.mp-presets{display:flex;gap:6px;margin-bottom:10px;}
+.mp-preset{flex:1;height:22px;font-size:10px;border:1px solid #bbb;background:#f6f6f6;border-radius:3px;cursor:pointer;font-family:'Nunito Sans',sans-serif;}
+.mp-preset:hover{background:#e8f0fb;border-color:var(--accent);color:var(--accent);}
+
+/* ── PRESET CHOICE CARDS ── */
+.preset-choice{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border:2px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;width:100%;font-family:'Nunito Sans',sans-serif;transition:border-color .15s,background .15s,box-shadow .15s;}
+.preset-choice:hover{border-color:var(--accent);background:#f0f6ff;box-shadow:0 2px 8px rgba(37,99,168,.12);}
+.preset-choice.pc-active{border-color:var(--accent);background:#e8f0fb;box-shadow:0 2px 8px rgba(37,99,168,.18);}
+.preset-choice .pc-icon{font-size:22px;line-height:1;}
+.preset-choice .pc-title{font-weight:700;font-size:12px;color:#222;}
+.preset-choice .pc-desc{font-size:10px;color:#888;text-align:center;}
+
+/* ── MIRROR MARGIN BTN ── */
+.rb.mirror-btn{color:#7a3a9a;}
+.rb.mirror-btn.on{background:#f3e8ff;color:#6a1b9a;border:1.5px solid #ba68c8;}
+.rb.mirror-btn.on:hover{background:#ead9f8;}
 
 /* ── KEYBOARD LOCK ── */
-.rb.kb-lock { color:#c0392b; border:1.5px solid transparent; }
-.rb.kb-lock.locked { background:#fdecea; border-color:#e57373; color:#b71c1c; }
-.rb.kb-lock.locked:hover { background:#ffcdd2; }
+.rb.kb-lock{color:#c0392b;border:1.5px solid transparent;}
+.rb.kb-lock.locked{background:#fdecea;border-color:#e57373;color:#b71c1c;}
+.rb.kb-lock.locked:hover{background:#ffcdd2;}
 
 /* ── STATUS BAR ── */
-.status-bar { height:22px; background:#f0f0f0; border-top:1px solid #d0d0d0; display:flex; align-items:center; padding:0 12px; gap:18px; font-size:11px; color:#666; font-family:'Nunito Sans',sans-serif; flex-shrink:0; }
-.status-right { margin-left:auto; display:flex; gap:14px; align-items:center; }
-.zoom-ctrl { display:flex; align-items:center; gap:5px; }
-.zoom-slider { width:70px; accent-color:var(--accent); }
+.status-bar{height:22px;background:#f0f0f0;border-top:1px solid #d0d0d0;display:flex;align-items:center;padding:0 12px;gap:18px;font-size:11px;color:#666;font-family:'Nunito Sans',sans-serif;flex-shrink:0;}
+.status-right{margin-left:auto;display:flex;gap:14px;align-items:center;}
+.zoom-ctrl{display:flex;align-items:center;gap:5px;}
+.zoom-slider{width:70px;accent-color:var(--accent);}
 
-/* ── PAGE NAVIGATOR ── */
-.page-nav {
-  height: 36px;
-  background: #2a2a2a;
-  border-top: 1px solid #111;
-  display: flex; align-items: center; justify-content: center;
-  gap: 6px;
-  flex-shrink: 0;
-  padding: 0 12px;
-  overflow-x: auto;
-}
-.page-nav::-webkit-scrollbar { height: 3px; }
-.page-nav::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
-.pg-btn {
-  min-width: 28px; height: 24px;
-  border: 1.5px solid #555;
-  background: #3a3a3a;
-  color: #ccc;
-  border-radius: 4px;
-  font-size: 11px;
-  font-family: 'Nunito Sans', sans-serif;
-  cursor: pointer;
-  padding: 0 8px;
-  transition: background .12s, border-color .12s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.pg-btn:hover { background: #505050; border-color: #888; color: #fff; }
-.pg-btn.active { background: var(--accent); border-color: #4a8fe0; color: #fff; }
-.pg-nav-arrow {
-  width: 24px; height: 24px;
-  background: transparent; border: none;
-  color: #aaa; font-size: 16px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  border-radius: 3px;
-  transition: color .12s;
-}
-.pg-nav-arrow:hover { color: #fff; }
-
-/* ── AUTOSAVE INDICATOR ── */
-.autosave-dot { width:7px; height:7px; border-radius:50%; background:#4caf50; display:inline-block; margin-left:4px; transition:background .3s; }
-.autosave-dot.saving { background:#f5a623; }
-.autosave-dot.error  { background:#e53e3e; }
+/* ── AUTOSAVE ── */
+.autosave-dot{width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;margin-left:4px;transition:background .3s;}
+.autosave-dot.saving{background:#f5a623;}
+.autosave-dot.error{background:#e53e3e;}
 
 /* ── DRIVE PANEL ── */
-.drive-panel {
-  display:none; position:fixed;
-  background:#fff; border:1px solid #ccc; border-radius:6px;
-  box-shadow:0 4px 18px rgba(0,0,0,.18);
-  padding:14px 16px 16px; z-index:9999; width:260px;
-  font-family:'Nunito Sans',sans-serif; font-size:12px;
-}
-.drive-panel.open { display:block; }
-.drive-panel h4 { font-size:12px; font-weight:700; color:#333; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
-.drive-section { margin-bottom:10px; }
-.drive-section label { display:block; color:#555; font-size:11px; margin-bottom:4px; font-weight:600; }
-.drive-input { width:100%; height:26px; border:1px solid #ccc; border-radius:3px; padding:0 7px; font-size:11.5px; font-family:'Nunito Sans',sans-serif; outline:none; }
-.drive-input:focus { border-color:var(--accent); }
-.drive-btn { width:100%; height:27px; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-family:'Nunito Sans',sans-serif; font-weight:600; margin-top:5px; display:flex; align-items:center; justify-content:center; gap:6px; }
-.drive-btn.export { background:#1a73e8; color:#fff; }
-.drive-btn.export:hover { background:#1558b0; }
-.drive-btn.import { background:#34a853; color:#fff; }
-.drive-btn.import:hover { background:#267a3e; }
-.drive-btn.local-export { background:#f3f3f3; color:#333; border:1px solid #ccc; }
-.drive-btn.local-export:hover { background:#e8e8e8; }
-.drive-status { font-size:10.5px; color:#666; margin-top:8px; min-height:14px; text-align:center; }
-.drive-sep { height:1px; background:#eee; margin:10px 0; }
+.drive-panel{display:none;position:fixed;background:#fff;border:1px solid #ccc;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:14px 16px 16px;z-index:9999;width:260px;font-family:'Nunito Sans',sans-serif;font-size:12px;}
+.drive-panel.open{display:block;}
+.drive-panel h4{font-size:12px;font-weight:700;color:#333;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.drive-section{margin-bottom:10px;}
+.drive-section label{display:block;color:#555;font-size:11px;margin-bottom:4px;font-weight:600;}
+.drive-input{width:100%;height:26px;border:1px solid #ccc;border-radius:3px;padding:0 7px;font-size:11.5px;font-family:'Nunito Sans',sans-serif;outline:none;}
+.drive-input:focus{border-color:var(--accent);}
+.drive-btn{width:100%;height:27px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-family:'Nunito Sans',sans-serif;font-weight:600;margin-top:5px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.drive-btn.export{background:#1a73e8;color:#fff;}.drive-btn.export:hover{background:#1558b0;}
+.drive-btn.import{background:#34a853;color:#fff;}.drive-btn.import:hover{background:#267a3e;}
+.drive-btn.local-export{background:#f3f3f3;color:#333;border:1px solid #ccc;}.drive-btn.local-export:hover{background:#e8e8e8;}
+.drive-status{font-size:10.5px;color:#666;margin-top:8px;min-height:14px;text-align:center;}
+.drive-sep{height:1px;background:#eee;margin:10px 0;}
 
-@media print {
-  .toolbar-area,.ruler,.status-bar,.page-nav{display:none!important;}
+/* ── LATEX HELPER ── */
+.latex-src{display:none;}
+
+@media print{
+  .toolbar-area,.ruler,.status-bar,.nav-ribbon,.filename-bar{display:none!important;}
   .editor-scroll{overflow:visible!important;background:none;}
   .zoom-outer,.zoom-wrapper{position:static!important;transform:none!important;width:auto!important;height:auto!important;padding:0!important;gap:0!important;}
   .page{box-shadow:none!important;overflow:visible!important;page-break-after:always;break-after:page;height:297mm!important;width:210mm!important;margin:0!important;}
@@ -336,6 +242,13 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 </head>
 <body>
 <div class="app">
+
+<!-- ═══ FILENAME BAR ═══ -->
+<div class="filename-bar">
+  <span class="fb-icon">📄</span>
+  <input type="text" class="doc-title-input" id="docTitle" placeholder="Untitled Document" value="Shadab Exam Paper" title="Click to rename document">
+  <span class="fb-hint">Click title to rename</span>
+</div>
 
 <div class="toolbar-area">
 
@@ -355,7 +268,7 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   <button class="rb" onclick="document.execCommand('insertOrderedList')" title="Numbered"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" font-size="6" fill="currentColor" stroke="none">1.</text><text x="2" y="14" font-size="6" fill="currentColor" stroke="none">2.</text><text x="2" y="20" font-size="6" fill="currentColor" stroke="none">3.</text></svg></button>
 </div>
 
-<!-- ═══ ROW 2: Render LaTeX · Urdu · KB Lock · Save PDF · Save DOCX · Margins ═══ -->
+<!-- ═══ ROW 2: Render LaTeX · Urdu · PDF · DOCX · Drive · Margins · Mirror · KB Lock · Undo/Redo ═══ -->
 <div class="ribbon">
   <button class="rb" onclick="renderAllLatex()" title="Render LaTeX" style="color:#7b2d8b;font-weight:700;font-size:13px;">∑</button>
   <button class="rb" id="urduBtn" onclick="toggleUrdu()" title="Toggle Urdu RTL mode" style="color:#1a6b3a;font-weight:700;">اردو</button>
@@ -363,70 +276,42 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   <button class="rb" onclick="savePDF()" title="Save as PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
   <button class="rb" onclick="saveDocx()" title="Save DOCX" style="color:#1a5c2a;font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></button>
   <div class="rsep"></div>
-  <!-- Drive button -->
+  <!-- Drive -->
   <div class="mp-wrap" id="driveWrap">
-    <button class="rb" id="driveBtn" onclick="toggleDrivePanel()" title="Google Drive / Local Save & Load" style="color:#1a73e8;font-weight:700;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2L2 19h20L12 2z" stroke-linejoin="round"/><path d="M2 19h20" /><path d="M8.5 13L12 7l3.5 6"/></svg>
+    <button class="rb" id="driveBtn" onclick="toggleDrivePanel()" title="Google Drive / Local Save &amp; Load" style="color:#1a73e8;font-weight:700;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2L2 19h20L12 2z" stroke-linejoin="round"/><path d="M2 19h20"/><path d="M8.5 13L12 7l3.5 6"/></svg>
     </button>
     <div class="drive-panel" id="drivePanel">
-      <h4>
-        <svg viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" width="14" height="14"><path d="M12 2L2 19h20L12 2z" stroke-linejoin="round"/></svg>
-        Drive &amp; Local Storage
-      </h4>
-
-      <!-- LOCAL AUTO-SAVE -->
+      <h4><svg viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" width="14" height="14"><path d="M12 2L2 19h20L12 2z" stroke-linejoin="round"/></svg>Drive &amp; Local Storage</h4>
       <div class="drive-section">
         <label>💾 Local Auto-Save (Browser)</label>
         <button class="drive-btn local-export" onclick="localSaveNow()">Save Now to Browser</button>
         <button class="drive-btn local-export" style="margin-top:4px;" onclick="localLoad()">Restore from Browser</button>
         <button class="drive-btn local-export" style="margin-top:4px;color:#c0392b;" onclick="localClear()">Clear Saved Data</button>
       </div>
-
       <div class="drive-sep"></div>
-
-      <!-- EXPORT FILE -->
       <div class="drive-section">
         <label>📤 Export to File (.shadab)</label>
-        <button class="drive-btn export" onclick="exportFile()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download .shadab file
-        </button>
+        <button class="drive-btn export" onclick="exportFile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download .shadab file</button>
       </div>
-
-      <!-- IMPORT FILE -->
       <div class="drive-section">
         <label>📥 Import from File (.shadab)</label>
-        <label class="drive-btn import" style="cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/></svg>
-          Open .shadab file
-          <input type="file" accept=".shadab,.json" style="display:none;" onchange="importFile(event)">
-        </label>
+        <label class="drive-btn import" style="cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/></svg>Open .shadab file<input type="file" accept=".shadab,.json" style="display:none;" onchange="importFile(event)"></label>
       </div>
-
       <div class="drive-sep"></div>
-
-      <!-- GOOGLE DRIVE via Apps Script -->
       <div class="drive-section">
         <label>☁️ Google Drive (via Gmail)</label>
         <input class="drive-input" id="scriptUrl" placeholder="Paste your Apps Script URL…" value="">
         <button class="drive-btn local-export" style="margin-top:4px;font-size:10px;" onclick="driveSaveUrl()">💾 Save URL</button>
-        <button class="drive-btn export" style="margin-top:6px;" onclick="driveExport()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Save to Drive
-        </button>
-        <button class="drive-btn import" style="margin-top:4px;" onclick="driveImport()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/></svg>
-          Load from Drive
-        </button>
-        <div style="font-size:10px;color:#888;margin-top:6px;line-height:1.5;">
-          💡 One-time setup: go to <b>script.google.com</b>, paste the Apps Script code, deploy as Web App, copy the URL here.
-        </div>
+        <button class="drive-btn export" style="margin-top:6px;" onclick="driveExport()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Save to Drive</button>
+        <button class="drive-btn import" style="margin-top:4px;" onclick="driveImport()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/></svg>Load from Drive</button>
+        <div style="font-size:10px;color:#888;margin-top:6px;line-height:1.5;">💡 One-time setup: go to <b>script.google.com</b>, paste the Apps Script code, deploy as Web App, copy the URL here.</div>
       </div>
-
       <div id="driveStatus" class="drive-status"></div>
     </div>
   </div>
   <div class="rsep"></div>
+  <!-- Margin button -->
   <div class="mp-wrap">
     <button class="rb" id="marginBtn" onclick="toggleMarginPanel()" title="Adjust page margins" style="color:#5a3a8a;font-weight:600;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
@@ -445,6 +330,15 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
       <button class="mp-apply" onclick="applyMargins()">Apply Margins</button>
     </div>
   </div>
+  <!-- Mirror Margin button (NEW) -->
+  <button class="rb mirror-btn" id="mirrorMarginBtn" onclick="toggleMirrorMargins()" title="Toggle mirror margins (book/binding layout)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+      <rect x="2" y="3" width="9" height="18" rx="1"/>
+      <rect x="13" y="3" width="9" height="18" rx="1"/>
+      <line x1="11" y1="12" x2="13" y2="12" stroke-width="1.5" stroke-dasharray="1 1"/>
+    </svg>
+    Mirror
+  </button>
   <div class="rsep"></div>
   <button class="rb kb-lock" id="kbLockBtn" onclick="toggleKeyboardLock()" title="Lock keyboard (scroll mode)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -454,7 +348,7 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
   <button class="rb" onclick="document.execCommand('redo')" title="Redo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></button>
 </div>
 
-<!-- ═══ ROW 3: Bold · Italic · Underline · Undo/Redo · Color · Smart Format ═══ -->
+<!-- ═══ ROW 3: Bold · Italic · Underline · Smart Format · Spacing ═══ -->
 <div class="ribbon">
   <button class="rb" onclick="document.execCommand('bold')" title="Bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button>
   <button class="rb" onclick="document.execCommand('italic')" title="Italic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
@@ -473,40 +367,55 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
       ontouchstart="spacingPressStart(event)" ontouchend="spacingPressEnd(event)" ontouchcancel="spacingPressCancel()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><line x1="5" y1="2" x2="19" y2="2" stroke-dasharray="2 2" stroke-width="1.5" stroke="#aaa"/><line x1="5" y1="9" x2="19" y2="9" stroke-dasharray="2 2" stroke-width="1.5" stroke="#aaa"/></svg>
     </button>
-    <!-- Spacing panel (shown on long press) -->
     <div class="margin-panel" id="spacingPanel" style="width:210px;">
       <h4>↕ Text Spacing</h4>
-      <div class="mp-row">
-        <label>Line</label>
-        <input type="range" id="lineHeightSlider" min="1" max="4" step="0.05" value="1.65"
-          oninput="applyLineHeight(this.value); document.getElementById('lineHeightVal').textContent=parseFloat(this.value).toFixed(2)">
-        <span class="mp-val" id="lineHeightVal">1.65</span>
-      </div>
-      <div class="mp-row">
-        <label>Para</label>
-        <input type="range" id="paraSpaceSlider" min="0" max="24" step="1" value="0"
-          oninput="applyParaSpace(this.value); document.getElementById('paraSpaceVal').textContent=this.value+'px'">
-        <span class="mp-val" id="paraSpaceVal">0px</span>
-      </div>
-      <div class="mp-row">
-        <label>Letter</label>
-        <input type="range" id="letterSpaceSlider" min="-2" max="10" step="0.1" value="0"
-          oninput="applyLetterSpacing(this.value); document.getElementById('letterSpaceVal').textContent=parseFloat(this.value).toFixed(1)+'px'">
-        <span class="mp-val" id="letterSpaceVal">0px</span>
-      </div>
-      <div class="mp-row">
-        <label>Word</label>
-        <input type="range" id="wordSpaceSlider" min="-2" max="20" step="0.5" value="0"
-          oninput="applyWordSpacing(this.value); document.getElementById('wordSpaceVal').textContent=parseFloat(this.value).toFixed(1)+'px'">
-        <span class="mp-val" id="wordSpaceVal">0px</span>
-      </div>
-      <div class="mp-row">
-        <label>Indent</label>
-        <input type="range" id="indentSlider" min="0" max="40" step="1" value="0"
-          oninput="applyIndent(this.value); document.getElementById('indentVal').textContent=this.value+'px'">
-        <span class="mp-val" id="indentVal">0px</span>
-      </div>
+      <div class="mp-row"><label>Line</label><input type="range" id="lineHeightSlider" min="1" max="4" step="0.05" value="1.65" oninput="applyLineHeight(this.value);document.getElementById('lineHeightVal').textContent=parseFloat(this.value).toFixed(2)"><span class="mp-val" id="lineHeightVal">1.65</span></div>
+      <div class="mp-row"><label>Para</label><input type="range" id="paraSpaceSlider" min="0" max="24" step="1" value="0" oninput="applyParaSpace(this.value);document.getElementById('paraSpaceVal').textContent=this.value+'px'"><span class="mp-val" id="paraSpaceVal">0px</span></div>
+      <div class="mp-row"><label>Letter</label><input type="range" id="letterSpaceSlider" min="-2" max="10" step="0.1" value="0" oninput="applyLetterSpacing(this.value);document.getElementById('letterSpaceVal').textContent=parseFloat(this.value).toFixed(1)+'px'"><span class="mp-val" id="letterSpaceVal">0px</span></div>
+      <div class="mp-row"><label>Word</label><input type="range" id="wordSpaceSlider" min="-2" max="20" step="0.5" value="0" oninput="applyWordSpacing(this.value);document.getElementById('wordSpaceVal').textContent=parseFloat(this.value).toFixed(1)+'px'"><span class="mp-val" id="wordSpaceVal">0px</span></div>
+      <div class="mp-row"><label>Indent</label><input type="range" id="indentSlider" min="0" max="40" step="1" value="0" oninput="applyIndent(this.value);document.getElementById('indentVal').textContent=this.value+'px'"><span class="mp-val" id="indentVal">0px</span></div>
       <button class="mp-apply" onclick="resetSpacing()">Reset All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ROW 4: Page Navigation · Insert Image · Preset Selector ═══ -->
+<div class="nav-ribbon" id="navRibbon">
+  <!-- Page navigation cluster -->
+  <span style="font-size:11px;color:#666;font-weight:600;margin-right:2px;white-space:nowrap;">Pages:</span>
+  <button class="pg-nav-r" onclick="navPage(-1)" title="Previous page">&#8249;</button>
+  <div class="pg-btn-row" id="pgBtnRow"></div>
+  <button class="pg-nav-r" onclick="navPage(+1)" title="Next page">&#8250;</button>
+  <span class="page-info-lbl" id="pageInfoLbl">1 of 1</span>
+  <div class="rsep"></div>
+
+  <!-- Insert Image -->
+  <button class="rb" onclick="triggerInsertImage()" title="Insert image at cursor position" style="font-size:11px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><polyline points="21 15 16 10 5 21"/></svg>
+    Img
+  </button>
+  <input type="file" id="imageFileInput" accept="image/*" style="display:none;" onchange="insertImageFromFile(event)">
+
+  <!-- Preset Selector -->
+  <div class="mp-wrap">
+    <button class="rb" id="presetBtn" onclick="togglePresetPanel()" title="Choose document preset" style="font-size:11px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      <span id="presetBtnLabel">Exam</span> ▾
+    </button>
+    <div class="margin-panel" id="presetPanel" style="width:200px;">
+      <h4>📋 Document Preset</h4>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:2px;">
+        <button class="preset-choice pc-active" id="presetExamBtn" onclick="setPreset('exam')">
+          <span class="pc-icon">📝</span>
+          <span class="pc-title">Exam Paper</span>
+          <span class="pc-desc">With coaching centre header, class, subject fields</span>
+        </button>
+        <button class="preset-choice" id="presetBlankBtn" onclick="setPreset('blank')">
+          <span class="pc-icon">📄</span>
+          <span class="pc-title">Blank Page</span>
+          <span class="pc-desc">Clean A4 with no header</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -516,13 +425,12 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
 <!-- MAIN AREA -->
 <div class="main-area">
   <div class="ruler"><canvas id="rulerCanvas"></canvas></div>
-
   <div class="editor-scroll" id="editorScroll">
     <div class="zoom-outer" id="zoomOuter">
       <div class="zoom-wrapper" id="zoomWrapper">
 
         <!-- PAGE 1 -->
-        <div class="page" id="page1">
+        <div class="page" id="page1" data-preset="exam">
           <div class="page-header">
             <div class="headline" contenteditable="true" spellcheck="false">Shadab Coaching Centre</div>
           </div>
@@ -558,13 +466,6 @@ html,body { height:100%; font-family:'Nunito Sans',sans-serif; background:var(--
       </div>
     </div>
   </div>
-
-  <!-- PAGE NAVIGATOR -->
-  <div class="page-nav" id="pageNav">
-    <button class="pg-nav-arrow" onclick="navPage(-1)" title="Previous page">&#8249;</button>
-    <div id="pgBtnRow" style="display:flex;gap:6px;align-items:center;"></div>
-    <button class="pg-nav-arrow" onclick="navPage(+1)" title="Next page">&#8250;</button>
-  </div>
 </div>
 
 </div><!-- /app -->
@@ -580,29 +481,7 @@ document.querySelectorAll('.toolbar-area .rb, .toolbar-area .mf-btn').forEach(bt
 });
 
 // ═══════════════════════════════════════
-// MENU DROPDOWNS
-// ═══════════════════════════════════════
-document.querySelectorAll('.menu-item').forEach(item => {
-  item.addEventListener('click', e => {
-    e.stopPropagation();
-    const was = item.classList.contains('open');
-    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open'));
-    if (!was) item.classList.add('open');
-  });
-  item.addEventListener('mouseenter', () => {
-    if (document.querySelector('.menu-item.open')) {
-      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open'));
-      item.classList.add('open');
-    }
-  });
-});
-document.addEventListener('click', () => document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('open')));
-
-// ═══════════════════════════════════════
-// ZOOM  — absolute outer/wrapper pattern
-// outer is sized to true scaled dimensions → scrollbars are correct
-// wrapper is absolutely inside outer, scaled from top-left
-// When content narrower than viewport → centred via left offset
+// ZOOM
 // ═══════════════════════════════════════
 let currentZoom = 1.0;
 let _natW = 0, _natH = 0;
@@ -621,30 +500,19 @@ function applyZoom(z, fx, fy) {
   const outer   = document.getElementById('zoomOuter');
   const wrapper = document.getElementById('zoomWrapper');
   z = Math.min(2.5, Math.max(0.3, z));
-
-  // Focal point in unscaled content coords
   const cx = (scroll.scrollLeft + fx) / currentZoom;
   const cy = (scroll.scrollTop  + fy) / currentZoom;
   currentZoom = z;
-
   const sw  = _natW * z, sh = _natH * z;
   const vpW = scroll.clientWidth, vpH = scroll.clientHeight;
-
   wrapper.style.transform       = `scale(${z})`;
   wrapper.style.transformOrigin = 'top left';
-
-  // Outer tells the scrollbar the real visual size
   outer.style.width  = Math.max(vpW, sw) + 'px';
   outer.style.height = Math.max(vpH, sh) + 'px';
-
-  // Horizontally centre when content is narrower than viewport
   const ox = sw < vpW ? (vpW - sw) / 2 : 0;
   wrapper.style.left = ox + 'px';
-
-  // Restore focal point
   scroll.scrollLeft = Math.max(0, cx * z - fx + ox);
   scroll.scrollTop  = Math.max(0, cy * z - fy);
-
   document.getElementById('zoomSlider').value      = Math.round(z * 100);
   document.getElementById('zoomLabel').textContent = Math.round(z * 100) + '%';
   scheduleRuler();
@@ -665,7 +533,6 @@ window.addEventListener('resize', () => {
   drawRuler();
 });
 
-// Block browser zoom
 document.addEventListener('wheel', e => {
   if (!e.ctrlKey) return;
   e.preventDefault();
@@ -681,37 +548,30 @@ document.addEventListener('keydown', e => {
   else if (e.key === '-') { e.preventDefault(); setZoom(Math.round(currentZoom / 1.1 * 100)); }
 });
 
-// Pinch zoom — RAF batched
+// Pinch zoom
 (function() {
   const scroll = document.getElementById('editorScroll');
   let sd=null, sz=null, mx=null, my=null, pz=null, raf=null;
   const pd = (a,b) => Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
   const flush = () => { raf=null; if(pz!==null){applyZoom(pz,mx,my);pz=null;} };
-
   scroll.addEventListener('touchstart', e => {
-    if (e.touches.length!==2) return;
-    e.preventDefault();
-    const r = scroll.getBoundingClientRect();
-    sd = pd(e.touches[0], e.touches[1]);
-    sz = currentZoom;
-    mx = (e.touches[0].clientX + e.touches[1].clientX)/2 - r.left;
-    my = (e.touches[0].clientY + e.touches[1].clientY)/2 - r.top;
-  }, {passive:false});
-
+    if(e.touches.length!==2)return;e.preventDefault();
+    const r=scroll.getBoundingClientRect();
+    sd=pd(e.touches[0],e.touches[1]);sz=currentZoom;
+    mx=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left;
+    my=(e.touches[0].clientY+e.touches[1].clientY)/2-r.top;
+  },{passive:false});
   scroll.addEventListener('touchmove', e => {
-    if (e.touches.length!==2 || !sd) return;
-    e.preventDefault();
-    pz = sz * pd(e.touches[0], e.touches[1]) / sd;
-    if (!raf) raf = requestAnimationFrame(flush);
-  }, {passive:false});
-
-  const end = () => { sd=null; cancelAnimationFrame(raf); raf=null; };
-  scroll.addEventListener('touchend', end);
-  scroll.addEventListener('touchcancel', end);
+    if(e.touches.length!==2||!sd)return;e.preventDefault();
+    pz=sz*pd(e.touches[0],e.touches[1])/sd;
+    if(!raf)raf=requestAnimationFrame(flush);
+  },{passive:false});
+  const end=()=>{sd=null;cancelAnimationFrame(raf);raf=null;};
+  scroll.addEventListener('touchend',end);scroll.addEventListener('touchcancel',end);
 })();
 
 // ═══════════════════════════════════════
-// COLUMN HEIGHT (fills available page space)
+// COLUMN HEIGHT
 // ═══════════════════════════════════════
 function recalcColH(area) {
   const page  = area.closest('.page');
@@ -728,93 +588,156 @@ function recalcColH(area) {
 }
 
 // ═══════════════════════════════════════
-// PAGINATION  — spill overflow to next page
+// WPS-STYLE VIRTUAL PAGINATION ENGINE
+// Stable, MutationObserver-driven reflow
 // ═══════════════════════════════════════
-// CSS columns overflow HORIZONTALLY (4th column to the right).
-// scrollWidth > clientWidth detects this even with overflow:hidden.
+let _rfTimer    = null;
+let _rfBusy     = false;
+let _rfPending  = false;
+
+// CSS column layout overflows horizontally (4th column forms to the right).
+// scrollWidth > clientWidth reliably detects this.
 function isOverflow(area) {
-  return area.scrollWidth > area.clientWidth + 2;
+  return area.scrollWidth > area.clientWidth + 3;
 }
 
-let _rfTimer = null;
-function scheduleReflow() { clearTimeout(_rfTimer); _rfTimer = setTimeout(reflowPages, 380); }
+function scheduleReflow(delay) {
+  if (_rfBusy) {
+    // If we're in the middle of a reflow, queue another one after a short delay
+    if (!_rfPending) {
+      _rfPending = true;
+      setTimeout(() => { _rfPending = false; scheduleReflow(200); }, 200);
+    }
+    return;
+  }
+  clearTimeout(_rfTimer);
+  _rfTimer = setTimeout(() => {
+    // Double rAF: ensures browser layout has fully settled before measuring
+    requestAnimationFrame(() => requestAnimationFrame(reflowPages));
+  }, delay !== undefined ? delay : 300);
+}
+
+// MutationObserver watches for any content change in the editor
+const _pageObserver = new MutationObserver(mutations => {
+  if (_rfBusy) return; // ignore mutations caused by reflow itself
+  const hasContent = mutations.some(m => {
+    if (m.type === 'characterData') return m.target.parentNode?.closest?.('.columns-area');
+    if (m.type === 'childList') return m.target.closest?.('.columns-area') || [...m.addedNodes, ...m.removedNodes].some(n => n.nodeType !== 1 || n.classList?.contains('columns-area') || n.closest?.('.columns-area'));
+    return false;
+  });
+  if (hasContent) scheduleReflow(250);
+});
+
+function startPageObserver() {
+  _pageObserver.disconnect();
+  _pageObserver.observe(document.getElementById('zoomWrapper'), {
+    childList: true, subtree: true, characterData: true
+  });
+}
 
 function reflowPages() {
+  if (_rfBusy) return;
+  _rfBusy = true;
+  _pageObserver.disconnect(); // pause observer during reflow to avoid re-entry
+
   const wrapper = document.getElementById('zoomWrapper');
   let pages = () => [...wrapper.querySelectorAll('.page')];
 
-  // FORWARD — push overflow to next page
+  // ── FORWARD PASS: push overflow nodes to next page ──────────────────
   let all = pages();
   for (let i = 0; i < all.length; i++) {
     const area = all[i].querySelector('.columns-area');
     if (!area) continue;
+    recalcColH(area); // ensure height is up to date
     let g = 0;
-    while (isOverflow(area) && g++ < 800) {
+    while (isOverflow(area) && g++ < 600) {
       if (!all[i+1]) {
         const np = makeContPage(all.length + 1);
         wrapper.appendChild(np);
-        requestAnimationFrame(() => {
-          recalcColH(np.querySelector('.columns-area'));
-          cacheNatSize();
-          // Re-apply zoom to resize outer container
-          const s = document.getElementById('editorScroll');
-          applyZoom(currentZoom, s.clientWidth / 2, s.clientHeight / 2);
-        });
+        // Force synchronous layout for new page
+        np.offsetHeight; // trigger layout
+        recalcColH(np.querySelector('.columns-area'));
         all = pages();
       }
       const nextArea = all[i+1].querySelector('.columns-area');
       const kids = blockKids(area);
       if (!kids.length) break;
-      const last = kids[kids.length-1];
+      const last = kids[kids.length - 1];
       area.removeChild(last);
       nextArea.insertBefore(last, nextArea.firstChild);
     }
   }
 
-  // BACKWARD — pull back if room exists
+  // ── BACKWARD PASS: pull nodes back if room exists ──────────────────
   all = pages();
-  for (let i = all.length-1; i > 0; i--) {
+  for (let i = all.length - 1; i > 0; i--) {
     const area = all[i].querySelector('.columns-area');
     const prev = all[i-1].querySelector('.columns-area');
     if (!area || !prev) continue;
     let g = 0;
-    while (g++ < 800) {
+    while (g++ < 600) {
       const fc = blockKids(area)[0];
       if (!fc) break;
       prev.appendChild(fc);
-      if (isOverflow(prev)) { prev.removeChild(fc); area.insertBefore(fc, area.firstChild); break; }
+      if (isOverflow(prev)) {
+        prev.removeChild(fc);
+        area.insertBefore(fc, area.firstChild);
+        break;
+      }
     }
   }
 
-  // Trim empty continuation pages
+  // ── TRIM empty continuation pages ──────────────────────────────────
   [...wrapper.querySelectorAll('.page-cont')].reverse().forEach(p => {
     const a = p.querySelector('.columns-area');
     if (!a || !a.innerText.trim()) p.remove();
   });
 
   updateCounts();
+
+  // Resize outer container for new page count
+  requestAnimationFrame(() => {
+    cacheNatSize();
+    const s = document.getElementById('editorScroll');
+    applyZoom(currentZoom, s.clientWidth / 2, s.clientHeight / 2);
+  });
+
+  _rfBusy = false;
+  startPageObserver(); // resume observer
+
+  // Verification pass: if overflow still exists, schedule another reflow
+  requestAnimationFrame(() => {
+    let needsMore = false;
+    document.querySelectorAll('.columns-area').forEach(a => { if(isOverflow(a)) needsMore = true; });
+    if (needsMore) scheduleReflow(180);
+  });
 }
 
 function blockKids(area) {
-  return [...area.childNodes].filter(n => n.nodeType===1 || (n.nodeType===3 && n.textContent.trim()));
+  return [...area.childNodes].filter(n =>
+    n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim())
+  );
 }
 
-function makeContPage(_num) {
+function makeContPage(num) {
   const p = document.createElement('div');
   p.className = 'page page-cont';
+  // Apply current preset to continuation pages
+  p.dataset.preset = currentPreset;
   p.innerHTML = `<div class="columns-area" contenteditable="true" spellcheck="true"></div>`;
   bindArea(p.querySelector('.columns-area'));
+  // Apply current margins (with mirror margin awareness)
+  applyPageMarginTo(p, num - 1); // 0-indexed
   return p;
 }
 
 function bindArea(area) {
   area.addEventListener('input', () => { updateCounts(); scheduleReflow(); });
-  // Mirror urdu mode state onto newly created pages
   if (urduMode) applyUrduToArea(area);
 }
 
 // ═══════════════════════════════════════
-// COUNTS + PAGE NAVIGATOR
+// COUNTS + PAGE NAVIGATOR (Row 4)
 // ═══════════════════════════════════════
 let _currentPage = 1;
 
@@ -834,32 +757,33 @@ function rebuildPageNav(n) {
   row.innerHTML = '';
   for (let i = 1; i <= n; i++) {
     const btn = document.createElement('button');
-    btn.className = 'pg-btn' + (i === _currentPage ? ' active' : '');
-    btn.textContent = 'P' + i;
+    btn.className = 'pg-btn2' + (i === _currentPage ? ' active' : '');
+    btn.textContent = i;
     btn.onclick = () => goToPage(i);
     row.appendChild(btn);
   }
+  const lbl = document.getElementById('pageInfoLbl');
+  if (lbl) lbl.textContent = _currentPage + ' of ' + n;
 }
 
 function goToPage(num) {
   const pages = document.querySelectorAll('.page');
   if (num < 1 || num > pages.length) return;
   _currentPage = num;
-  // Scroll the page into view inside the scaled wrapper
   const scroll  = document.getElementById('editorScroll');
   const wrapper = document.getElementById('zoomWrapper');
   const target  = pages[num - 1];
   const wRect   = wrapper.getBoundingClientRect();
   const tRect   = target.getBoundingClientRect();
-  // Position in unscaled wrapper coords
-  const topInWrapper = (tRect.top - wRect.top) / currentZoom;
+  const topInWrapper  = (tRect.top  - wRect.top)  / currentZoom;
   const leftInWrapper = (tRect.left - wRect.left) / currentZoom;
-  // Convert to scroll position
   const ox = parseFloat(wrapper.style.left) || 0;
-  scroll.scrollTop  = topInWrapper * currentZoom - 24;  // 24px padding
+  scroll.scrollTop  = topInWrapper * currentZoom - 24;
   scroll.scrollLeft = Math.max(0, leftInWrapper * currentZoom + ox - (scroll.clientWidth - target.offsetWidth * currentZoom) / 2);
-  // Update active button
-  document.querySelectorAll('.pg-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === num));
+  document.querySelectorAll('.pg-btn2').forEach((b, i) => b.classList.toggle('active', i + 1 === num));
+  const lbl = document.getElementById('pageInfoLbl');
+  if (lbl) lbl.textContent = num + ' of ' + pages.length;
+  scheduleRuler(); // ruler may change with mirror margins
 }
 
 function navPage(delta) {
@@ -867,12 +791,11 @@ function navPage(delta) {
   goToPage(Math.min(n, Math.max(1, _currentPage + delta)));
 }
 
-// Track which page is visible while scrolling
+// Track visible page on scroll
 document.getElementById('editorScroll').addEventListener('scroll', () => {
   const scroll  = document.getElementById('editorScroll');
   const wrapper = document.getElementById('zoomWrapper');
   const pages   = [...document.querySelectorAll('.page')];
-  const mid     = scroll.scrollTop + scroll.clientHeight / 2;
   let closest = 0, minDist = Infinity;
   pages.forEach((p, i) => {
     const wRect = wrapper.getBoundingClientRect();
@@ -885,12 +808,15 @@ document.getElementById('editorScroll').addEventListener('scroll', () => {
   });
   if (closest + 1 !== _currentPage) {
     _currentPage = closest + 1;
-    document.querySelectorAll('.pg-btn').forEach((b, i) => b.classList.toggle('active', i === closest));
+    document.querySelectorAll('.pg-btn2').forEach((b, i) => b.classList.toggle('active', i === closest));
+    const lbl = document.getElementById('pageInfoLbl');
+    if (lbl) lbl.textContent = _currentPage + ' of ' + pages.length;
+    scheduleRuler();
   }
 }, { passive: true });
 
 // ═══════════════════════════════════════
-// PASTE — convert plain text to <div> blocks
+// PASTE
 // ═══════════════════════════════════════
 document.getElementById('editorScroll').addEventListener('paste', e => {
   if (!e.target.closest('.columns-area')) return;
@@ -911,10 +837,7 @@ function applyFont(f) {
 }
 function applyFontSize(s) {
   const px = (parseFloat(s) * 96 / 72).toFixed(2).replace(/\.?0+$/, '') + 'px';
-  // Apply to ALL areas including urdu-mode — size should always work
-  document.querySelectorAll('.columns-area').forEach(a => {
-    a.style.fontSize = px;
-  });
+  document.querySelectorAll('.columns-area').forEach(a => { a.style.fontSize = px; });
   setTimeout(reflowPages, 300);
 }
 
@@ -923,291 +846,208 @@ function applyFontSize(s) {
 // ═══════════════════════════════════════
 let urduMode = false;
 let _prevFont = '';
-let _jnnFontValue = ''; // exact value set after fonts load
+let _jnnFontValue = '';
 
 function applyUrduToArea(a) {
   a.classList.add('urdu-mode');
   const font = _jnnFontValue || "'JNN','JameelNooriNastaliq',serif";
-  a.style.fontFamily    = font;
-  a.style.lineHeight    = '2.2';
-  a.style.letterSpacing = '0';
-  a.style.wordSpacing   = '0';
-  a.dir = 'rtl';
+  a.style.fontFamily='';a.style.fontFamily=font;
+  a.style.lineHeight='2.2';a.style.letterSpacing='0';a.style.wordSpacing='0';a.dir='rtl';
 }
 function removeUrduFromArea(a) {
   a.classList.remove('urdu-mode');
-  a.style.fontFamily    = _prevFont || '';
-  a.style.lineHeight    = '';
-  a.style.letterSpacing = '';
-  a.style.wordSpacing   = '';
-  a.dir = 'ltr';
+  a.style.fontFamily=_prevFont||'';a.style.lineHeight='';a.style.letterSpacing='';a.style.wordSpacing='';a.dir='ltr';
 }
 
 async function toggleUrdu() {
   urduMode = !urduMode;
-
-  // Ensure fonts are loaded before applying
-  if (urduMode && !_fontsSynced) {
-    await syncFonts();
-  }
-
+  if (urduMode && !_fontsSynced) await syncFonts();
   const sel = document.getElementById('fontFamily');
-
   if (urduMode) {
     _prevFont = sel.value || '';
-
-    // Find JNN option in the loaded dropdown
     const opts = [...sel.options];
     const jnnOpt = opts.find(o => /jnn/i.test(o.textContent) || /jameel/i.test(o.textContent));
-    if (jnnOpt) {
-      _jnnFontValue = jnnOpt.value;
-      sel.value = jnnOpt.value;
-    } else {
-      // Add it manually if not found
-      const opt = document.createElement('option');
-      opt.value = "'JNN',serif";
-      opt.textContent = 'JNN';
-      sel.appendChild(opt);
-      sel.value = "'JNN',serif";
-      _jnnFontValue = "'JNN',serif";
-    }
-  } else {
-    sel.value = '';
-    _jnnFontValue = '';
-  }
-
-  document.querySelectorAll('.columns-area').forEach(a => {
-    if (urduMode) applyUrduToArea(a); else removeUrduFromArea(a);
-  });
-
-  document.querySelectorAll('.page').forEach(p => {
-    p.style.direction = urduMode ? 'rtl' : 'ltr';
-  });
-
-  document.querySelectorAll('.info-row').forEach(r => {
-    r.style.flexDirection = urduMode ? 'row-reverse' : '';
-  });
-
+    if (jnnOpt) { _jnnFontValue = jnnOpt.value; sel.value = jnnOpt.value; }
+    else { const opt=document.createElement('option');opt.value="'JNN',serif";opt.textContent='JNN';sel.appendChild(opt);sel.value="'JNN',serif";_jnnFontValue="'JNN',serif"; }
+  } else { sel.value='';_jnnFontValue=''; }
+  document.querySelectorAll('.columns-area').forEach(a => { if(urduMode)applyUrduToArea(a);else removeUrduFromArea(a); });
+  document.querySelectorAll('.page').forEach(p => { p.style.direction=urduMode?'rtl':'ltr'; });
+  document.querySelectorAll('.info-row').forEach(r => { r.style.flexDirection=urduMode?'row-reverse':''; });
   const btn = document.getElementById('urduBtn');
-  btn.classList.toggle('on', urduMode);
-  btn.style.color      = urduMode ? '#fff'    : '#1a6b3a';
-  btn.style.background = urduMode ? '#1a6b3a' : '';
-  btn.style.border     = urduMode ? '1px solid #1a6b3a' : '';
-  btn.title = urduMode ? 'Switch to LTR (English) mode' : 'Switch to RTL (Urdu) mode';
+  btn.classList.toggle('on',urduMode);btn.style.color=urduMode?'#fff':'#1a6b3a';
+  btn.style.background=urduMode?'#1a6b3a':'';btn.style.border=urduMode?'1px solid #1a6b3a':'';
+  btn.title=urduMode?'Switch to LTR (English) mode':'Switch to RTL (Urdu) mode';
 }
 
 // ═══════════════════════════════════════
-// LATEX  (MathJax 3) — auto-render all $…$ / $$…$$ in document
+// INSERT IMAGE (NEW)
 // ═══════════════════════════════════════
-function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let _lastFocusedArea = null;
 
-/**
- * Full LaTeX document renderer:
- * 1. Collects raw LaTeX source from ALL pages
- * 2. Strips preamble (\documentclass … \begin{document}) and \end{document}
- * 3. Converts LaTeX structural commands → HTML
- * 4. Puts HTML into page 1, removes continuation pages, reflows
- * 5. Calls MathJax to typeset all remaining $…$ / $$…$$ math
- */
+document.addEventListener('focusin', e => {
+  const area = e.target.closest('.columns-area');
+  if (area) _lastFocusedArea = area;
+});
+
+function triggerInsertImage() {
+  document.getElementById('imageFileInput').click();
+}
+
+function insertImageFromFile(evt) {
+  const file = evt.target.files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const activeArea = _lastFocusedArea || document.getElementById('columnsArea');
+    const img = document.createElement('img');
+    img.src = e.target.result;
+    img.style.cssText = 'max-width:100%;height:auto;display:block;margin:3px auto;';
+    img.contentEditable = 'false';
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(img);
+
+    // Try to insert at cursor position
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && activeArea.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+      const range = sel.getRangeAt(0);
+      range.collapse(false);
+      range.insertNode(wrapper);
+      range.setStartAfter(wrapper);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      activeArea.appendChild(wrapper);
+    }
+    scheduleReflow(200);
+    scheduleAutoSave();
+  };
+  reader.readAsDataURL(file);
+  evt.target.value = '';
+}
+
+// ═══════════════════════════════════════
+// PRESET SYSTEM (NEW)
+// ═══════════════════════════════════════
+let currentPreset = 'exam';
+
+function togglePresetPanel() {
+  const panel = document.getElementById('presetPanel');
+  const btn   = document.getElementById('presetBtn');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) { panel.classList.remove('open'); return; }
+  const br = btn.getBoundingClientRect();
+  const PW = 200, vw = window.innerWidth;
+  let left = br.left;
+  if (left + PW > vw - 8) left = vw - PW - 8;
+  if (left < 8) left = 8;
+  panel.style.top  = (br.bottom + 4) + 'px';
+  panel.style.left = left + 'px';
+  panel.classList.add('open');
+}
+
+function setPreset(preset) {
+  currentPreset = preset;
+  // Apply preset to all pages
+  document.querySelectorAll('.page').forEach(p => { p.dataset.preset = preset; });
+  // Update button label
+  const lbl = document.getElementById('presetBtnLabel');
+  if (lbl) lbl.textContent = preset === 'exam' ? 'Exam' : 'Blank';
+  // Update active card styling
+  document.getElementById('presetExamBtn').classList.toggle('pc-active', preset === 'exam');
+  document.getElementById('presetBlankBtn').classList.toggle('pc-active', preset === 'blank');
+  // Close panel
+  document.getElementById('presetPanel').classList.remove('open');
+  // Recalc column heights as header visibility changed
+  document.querySelectorAll('.columns-area').forEach(a => recalcColH(a));
+  scheduleReflow(250);
+}
+
+// Close preset panel on outside click
+document.addEventListener('click', e => {
+  const panel = document.getElementById('presetPanel');
+  const btn   = document.getElementById('presetBtn');
+  if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+
+// ═══════════════════════════════════════
+// LATEX  (MathJax 3)
+// ═══════════════════════════════════════
+function escAttr(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
 function renderAllLatex() {
   if (typeof MathJax === 'undefined' || !MathJax.typesetPromise) {
-    alert('MathJax is still loading — please try again in a moment.');
-    return;
+    alert('MathJax is still loading — please try again in a moment.'); return;
   }
-
-  // ── 1. Collect raw text from every page ──────────────────────────────
   const allAreas = [...document.querySelectorAll('.columns-area')];
   let src = allAreas.map(a => a.innerText).join('\n');
-
   const hasMath  = src.includes('$');
   const hasLatex = /\\(begin|end|item|section|textbf|usepackage|documentclass)/i.test(src);
-
-  if (!hasMath && !hasLatex) {
-    alert('No LaTeX found.\nPaste LaTeX source or write $…$ math equations, then click Render LaTeX.');
-    return;
-  }
-
-  // ── 2. Strip LaTeX preamble & document wrapper ───────────────────────
-  // Remove everything up to (and including) \begin{document}
+  if (!hasMath && !hasLatex) { alert('No LaTeX found.\nPaste LaTeX source or write $…$ math equations, then click Render LaTeX.'); return; }
   src = src.replace(/^[\s\S]*?\\begin\{document\}/m, '');
-  // Remove \end{document} and anything after
   src = src.replace(/\\end\{document\}[\s\S]*$/m, '');
 
-  // ── 3. Convert LaTeX → HTML ───────────────────────────────────────────
   function latexToHtml(tex) {
-    // Remove % comments (but keep the newline)
-    tex = tex.replace(/%[^\n]*/g, '');
-
-    // ── Spacing / breaks ──────────────────────────────────────────────
-    tex = tex.replace(/\\\\(\s*\[[\d.]+[a-z]*\])?/g, '<br>');  // \\ and \\[1em]
-    tex = tex.replace(/\\newline\b/g, '<br>');
-    tex = tex.replace(/\\hline\b/g, '<hr style="border-top:1px solid #888;margin:3px 0;">');
-    tex = tex.replace(/\\vspace\*?\{[^}]*\}/g, '');
-    tex = tex.replace(/\\hspace\*?\{[^}]*\}/g, '&nbsp;');
-    tex = tex.replace(/\\noindent\b/g, '');
-    tex = tex.replace(/\\medskip\b/g, '<div style="height:6px"></div>');
-    tex = tex.replace(/\\bigskip\b/g, '<div style="height:10px"></div>');
-    tex = tex.replace(/\\smallskip\b/g, '<div style="height:3px"></div>');
-    tex = tex.replace(/\\quad\b/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
-    tex = tex.replace(/\\qquad\b/g, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
-    tex = tex.replace(/~~/g, '&nbsp;&nbsp;');
-    tex = tex.replace(/~/g, '&nbsp;');
-
-    // ── Font / style commands ─────────────────────────────────────────
-    // Recursive braces handler for simple commands
-    function cmd1(tag) {
-      return (_, inner) => `<${tag}>${inner}</${tag}>`;
+    tex=tex.replace(/%[^\n]*/g,'');
+    tex=tex.replace(/\\\\(\s*\[[\d.]+[a-z]*\])?/g,'<br>');
+    tex=tex.replace(/\\newline\b/g,'<br>');
+    tex=tex.replace(/\\hline\b/g,'<hr style="border-top:1px solid #888;margin:3px 0;">');
+    tex=tex.replace(/\\vspace\*?\{[^}]*\}/g,'');tex=tex.replace(/\\hspace\*?\{[^}]*\}/g,'&nbsp;');
+    tex=tex.replace(/\\noindent\b/g,'');tex=tex.replace(/\\medskip\b/g,'<div style="height:6px"></div>');
+    tex=tex.replace(/\\bigskip\b/g,'<div style="height:10px"></div>');tex=tex.replace(/\\smallskip\b/g,'<div style="height:3px"></div>');
+    tex=tex.replace(/\\quad\b/g,'&nbsp;&nbsp;&nbsp;&nbsp;');tex=tex.replace(/\\qquad\b/g,'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
+    tex=tex.replace(/~~/g,'&nbsp;&nbsp;');tex=tex.replace(/~/g,'&nbsp;');
+    function cmd1(tag){return(_,inner)=>`<${tag}>${inner}</${tag}>`;}
+    for(let i=0;i<4;i++){
+      tex=tex.replace(/\\textbf\{([^{}]*)\}/g,cmd1('b'));tex=tex.replace(/\\textit\{([^{}]*)\}/g,cmd1('i'));
+      tex=tex.replace(/\\emph\{([^{}]*)\}/g,cmd1('i'));tex=tex.replace(/\\underline\{([^{}]*)\}/g,cmd1('u'));
+      tex=tex.replace(/\\texttt\{([^{}]*)\}/g,(_,s)=>`<code>${s}</code>`);
+      tex=tex.replace(/\\text\{([^{}]*)\}/g,(_,s)=>s);tex=tex.replace(/\\mbox\{([^{}]*)\}/g,(_,s)=>s);
     }
-    // Repeatedly apply so nested braces resolve
-    for (let i = 0; i < 4; i++) {
-      tex = tex.replace(/\\textbf\{([^{}]*)\}/g, cmd1('b'));
-      tex = tex.replace(/\\textit\{([^{}]*)\}/g,  cmd1('i'));
-      tex = tex.replace(/\\emph\{([^{}]*)\}/g,    cmd1('i'));
-      tex = tex.replace(/\\underline\{([^{}]*)\}/g, cmd1('u'));
-      tex = tex.replace(/\\texttt\{([^{}]*)\}/g,  (_, s) => `<code>${s}</code>`);
-      tex = tex.replace(/\\text\{([^{}]*)\}/g,    (_, s) => s);
-      tex = tex.replace(/\\mbox\{([^{}]*)\}/g,    (_, s) => s);
-    }
-
-    // Size declarations (scoped loosely — just wrap remaining line context)
-    tex = tex.replace(/\{\\Large\s+([^}]+)\}/g,  (_, s) => `<span style="font-size:1.3em">${s}</span>`);
-    tex = tex.replace(/\{\\large\s+([^}]+)\}/g,  (_, s) => `<span style="font-size:1.15em">${s}</span>`);
-    tex = tex.replace(/\{\\small\s+([^}]+)\}/g,  (_, s) => `<span style="font-size:.88em">${s}</span>`);
-    tex = tex.replace(/\{\\footnotesize\s+([^}]+)\}/g, (_, s) => `<span style="font-size:.8em">${s}</span>`);
-    tex = tex.replace(/\\Large\b/g, '').replace(/\\large\b/g, '').replace(/\\small\b/g, '');
-
-    // ── Sections ──────────────────────────────────────────────────────
-    tex = tex.replace(/\\section\*?\{([^}]*)\}/g,
-      (_, t) => `\n<div style="font-weight:700;font-size:1.05em;margin:6px 0 2px;border-bottom:1px solid #aaa;padding-bottom:1px;">${t}</div>\n`);
-    tex = tex.replace(/\\subsection\*?\{([^}]*)\}/g,
-      (_, t) => `\n<div style="font-weight:700;margin:4px 0 1px;">${t}</div>\n`);
-    tex = tex.replace(/\\subsubsection\*?\{([^}]*)\}/g,
-      (_, t) => `\n<div style="font-weight:600;font-style:italic;margin:3px 0 1px;">${t}</div>\n`);
-
-    // ── Environments ──────────────────────────────────────────────────
-    // center
-    tex = tex.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/g,
-      (_, body) => `<div style="text-align:center;">${processBody(body)}</div>`);
-
-    // enumerate (numbered list)
-    tex = tex.replace(/\\begin\{enumerate\}([\s\S]*?)\\end\{enumerate\}/g,
-      (_, body) => `<ol style="margin:2px 0 2px 18px;padding:0;">${itemsToLi(body)}</ol>`);
-
-    // itemize (bullet list)
-    tex = tex.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/g,
-      (_, body) => `<ul style="margin:2px 0 2px 18px;padding:0;">${itemsToLi(body)}</ul>`);
-
-    // description
-    tex = tex.replace(/\\begin\{description\}([\s\S]*?)\\end\{description\}/g,
-      (_, body) => `<dl style="margin:2px 0 2px 8px;">${descItems(body)}</dl>`);
-
-    // verbatim / lstlisting
-    tex = tex.replace(/\\begin\{verbatim\}([\s\S]*?)\\end\{verbatim\}/g,
-      (_, body) => `<pre style="font-family:monospace;font-size:.85em;background:#f5f5f5;padding:4px 6px;border-radius:3px;">${escHtml(body.trim())}</pre>`);
-    tex = tex.replace(/\\begin\{lstlisting\}([\s\S]*?)\\end\{lstlisting\}/g,
-      (_, body) => `<pre style="font-family:monospace;font-size:.85em;background:#f5f5f5;padding:4px 6px;border-radius:3px;">${escHtml(body.trim())}</pre>`);
-
-    // quote / quotation
-    tex = tex.replace(/\\begin\{quotation?\}([\s\S]*?)\\end\{quotation?\}/g,
-      (_, body) => `<blockquote style="margin:4px 0 4px 16px;border-left:2px solid #ccc;padding-left:8px;color:#444;">${processBody(body)}</blockquote>`);
-
-    // Generic remaining environments — strip begin/end tags
-    tex = tex.replace(/\\begin\{[^}]*\}/g, '').replace(/\\end\{[^}]*\}/g, '');
-
-    // ── Miscellaneous commands ────────────────────────────────────────
-    tex = tex.replace(/\\item\[([^\]]*)\]/g, (_, label) => `<b>${label}</b> `); // \item[label]
-    tex = tex.replace(/\\item\b/g, '');  // bare \item (already handled by itemsToLi)
-    tex = tex.replace(/\\maketitle\b/g, '');
-    tex = tex.replace(/\\tableofcontents\b/g, '');
-    tex = tex.replace(/\\newpage\b/g, '');
-    tex = tex.replace(/\\clearpage\b/g, '');
-    tex = tex.replace(/\\pagebreak\b/g, '');
-    tex = tex.replace(/\\centering\b/g, '');
-    tex = tex.replace(/\\raggedright\b/g, '');
-    tex = tex.replace(/\\raggedleft\b/g, '');
-    tex = tex.replace(/\\par\b/g, '\n');
-    tex = tex.replace(/\\footnote\{[^}]*\}/g, '');
-
-    // Remove remaining unknown \commands (but NOT math commands inside $…$)
-    // We protect math first, strip commands outside math, restore math
-    tex = protectedReplace(tex, /\\[a-zA-Z]+\*?\s*/g, '');
-
-    // Remove stray bare braces
-    tex = tex.replace(/(?<!\$[^$]*)\{([^{}]*)\}(?![^$]*\$)/g, '$1');
-
+    tex=tex.replace(/\{\\Large\s+([^}]+)\}/g,(_,s)=>`<span style="font-size:1.3em">${s}</span>`);
+    tex=tex.replace(/\{\\large\s+([^}]+)\}/g,(_,s)=>`<span style="font-size:1.15em">${s}</span>`);
+    tex=tex.replace(/\{\\small\s+([^}]+)\}/g,(_,s)=>`<span style="font-size:.88em">${s}</span>`);
+    tex=tex.replace(/\{\\footnotesize\s+([^}]+)\}/g,(_,s)=>`<span style="font-size:.8em">${s}</span>`);
+    tex=tex.replace(/\\Large\b/g,'').replace(/\\large\b/g,'').replace(/\\small\b/g,'');
+    tex=tex.replace(/\\section\*?\{([^}]*)\}/g,(_,t)=>`\n<div style="font-weight:700;font-size:1.05em;margin:6px 0 2px;border-bottom:1px solid #aaa;padding-bottom:1px;">${t}</div>\n`);
+    tex=tex.replace(/\\subsection\*?\{([^}]*)\}/g,(_,t)=>`\n<div style="font-weight:700;margin:4px 0 1px;">${t}</div>\n`);
+    tex=tex.replace(/\\subsubsection\*?\{([^}]*)\}/g,(_,t)=>`\n<div style="font-weight:600;font-style:italic;margin:3px 0 1px;">${t}</div>\n`);
+    tex=tex.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/g,(_,body)=>`<div style="text-align:center;">${processBody(body)}</div>`);
+    tex=tex.replace(/\\begin\{enumerate\}([\s\S]*?)\\end\{enumerate\}/g,(_,body)=>`<ol style="margin:2px 0 2px 18px;padding:0;">${itemsToLi(body)}</ol>`);
+    tex=tex.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/g,(_,body)=>`<ul style="margin:2px 0 2px 18px;padding:0;">${itemsToLi(body)}</ul>`);
+    tex=tex.replace(/\\begin\{description\}([\s\S]*?)\\end\{description\}/g,(_,body)=>`<dl style="margin:2px 0 2px 8px;">${descItems(body)}</dl>`);
+    tex=tex.replace(/\\begin\{verbatim\}([\s\S]*?)\\end\{verbatim\}/g,(_,body)=>`<pre style="font-family:monospace;font-size:.85em;background:#f5f5f5;padding:4px 6px;border-radius:3px;">${escHtml(body.trim())}</pre>`);
+    tex=tex.replace(/\\begin\{lstlisting\}([\s\S]*?)\\end\{lstlisting\}/g,(_,body)=>`<pre style="font-family:monospace;font-size:.85em;background:#f5f5f5;padding:4px 6px;border-radius:3px;">${escHtml(body.trim())}</pre>`);
+    tex=tex.replace(/\\begin\{quotation?\}([\s\S]*?)\\end\{quotation?\}/g,(_,body)=>`<blockquote style="margin:4px 0 4px 16px;border-left:2px solid #ccc;padding-left:8px;color:#444;">${processBody(body)}</blockquote>`);
+    tex=tex.replace(/\\begin\{[^}]*\}/g,'').replace(/\\end\{[^}]*\}/g,'');
+    tex=tex.replace(/\\item\[([^\]]*)\]/g,(_,label)=>`<b>${label}</b> `);tex=tex.replace(/\\item\b/g,'');
+    tex=tex.replace(/\\maketitle\b/g,'');tex=tex.replace(/\\tableofcontents\b/g,'');
+    tex=tex.replace(/\\newpage\b/g,'');tex=tex.replace(/\\clearpage\b/g,'');tex=tex.replace(/\\pagebreak\b/g,'');
+    tex=tex.replace(/\\centering\b/g,'');tex=tex.replace(/\\raggedright\b/g,'');tex=tex.replace(/\\raggedleft\b/g,'');
+    tex=tex.replace(/\\par\b/g,'\n');tex=tex.replace(/\\footnote\{[^}]*\}/g,'');
+    tex=protectedReplace(tex,/\\[a-zA-Z]+\*?\s*/g,'');
+    tex=tex.replace(/(?<!\$[^$]*)\{([^{}]*)\}(?![^$]*\$)/g,'$1');
     return tex;
   }
+  function protectedReplace(src,pattern,repl){const zones=[];const p2=src.replace(/\$\$[\s\S]*?\$\$|\$[^\n$]*\$/g,m=>{zones.push(m);return'\x00MATHZONE\x00'+(zones.length-1)+'\x00';});const replaced=p2.replace(pattern,repl);return replaced.replace(/\x00MATHZONE\x00(\d+)\x00/g,(_,i)=>zones[+i]);}
+  function itemsToLi(body){const parts=body.split(/\\item(?:\[[^\]]*\])?/);return parts.slice(1).map(p=>{const content=processBody(p.trim());return`<li style="margin-bottom:1px;">${content}</li>`;}).join('');}
+  function descItems(body){const parts=body.split(/\\item/);return parts.slice(1).map(p=>{const m=p.match(/^\[([^\]]*)\]([\s\S]*)/);if(m)return`<dt style="font-weight:700;">${m[1]}</dt><dd style="margin-left:12px;">${processBody(m[2].trim())}</dd>`;return`<dd style="margin-left:12px;">${processBody(p.trim())}</dd>`;}).join('');}
+  function processBody(t){return t.trim().split(/\n{2,}/).map(para=>{const line=para.replace(/\n/g,' ').trim();return line?`<div>${line}</div>`:''}).join('');}
 
-  // Helper: protect $…$ / $$…$$ zones while doing replacements outside them
-  function protectedReplace(src, pattern, repl) {
-    const zones = [];
-    const placeholder = '\x00MATHZONE\x00';
-    // Extract math zones
-    const protected_ = src.replace(/\$\$[\s\S]*?\$\$|\$[^\n$]*\$/g, m => {
-      zones.push(m);
-      return placeholder + (zones.length - 1) + '\x00';
-    });
-    // Apply replacement outside math
-    const replaced = protected_.replace(pattern, repl);
-    // Restore math zones
-    return replaced.replace(/\x00MATHZONE\x00(\d+)\x00/g, (_, i) => zones[+i]);
-  }
-
-  // Helper: convert \item lines inside enumerate/itemize to <li>
-  function itemsToLi(body) {
-    // Split on \item
-    const parts = body.split(/\\item(?:\[[^\]]*\])?/);
-    return parts.slice(1).map(p => {
-      const content = processBody(p.trim());
-      return `<li style="margin-bottom:1px;">${content}</li>`;
-    }).join('');
-  }
-
-  // Helper: description items
-  function descItems(body) {
-    const parts = body.split(/\\item/);
-    return parts.slice(1).map(p => {
-      const m = p.match(/^\[([^\]]*)\]([\s\S]*)/);
-      if (m) return `<dt style="font-weight:700;">${m[1]}</dt><dd style="margin-left:12px;">${processBody(m[2].trim())}</dd>`;
-      return `<dd style="margin-left:12px;">${processBody(p.trim())}</dd>`;
-    }).join('');
-  }
-
-  // Helper: process a body of text (inline conversion)
-  function processBody(t) {
-    return t.trim().split(/\n{2,}/).map(para => {
-      const line = para.replace(/\n/g, ' ').trim();
-      return line ? `<div>${line}</div>` : '';
-    }).join('');
-  }
-
-  // ── 4. Run the converter ─────────────────────────────────────────────
   let html = latexToHtml(src);
-
-  // Convert remaining blank lines / paragraphs to <div> blocks
   const lines = html.split('\n');
-  const divLines = lines.map(line => {
-    const t = line.trim();
-    if (!t) return '';
-    // Already an HTML tag?
-    if (t.startsWith('<')) return t;
-    return `<div>${t}</div>`;
-  }).filter(l => l !== '').join('');
+  const divLines = lines.map(line=>{const t=line.trim();if(!t)return'';if(t.startsWith('<'))return t;return`<div>${t}</div>`;}).filter(l=>l!=='').join('');
 
-  // ── 5. Put HTML into page 1, remove continuation pages, reflow ───────
   document.querySelectorAll('.page-cont').forEach(p => p.remove());
   const primary = document.getElementById('columnsArea');
   primary.innerHTML = divLines;
-
-  // ── Store pre-render source so save/restore preserves LaTeX ──────────
-  // We save the HTML BEFORE MathJax converts $…$ to SVG.
-  // collectState will use this instead of innerHTML.
   primary.dataset.latexSource = divLines;
 
   updateCounts();
   setTimeout(() => {
     reflowPages();
-    // ── 6. Typeset math with MathJax ─────────────────────────────────
     const areas = [...document.querySelectorAll('.columns-area')];
     MathJax.typesetPromise(areas)
       .then(() => { updateCounts(); setTimeout(reflowPages, 300); })
@@ -1215,7 +1055,6 @@ function renderAllLatex() {
   }, 250);
 }
 
-// Auto-render on paste
 function renderLatexInArea(area) { renderAllLatex(); }
 
 // ═══════════════════════════════════════
@@ -1234,7 +1073,7 @@ function clearAll() {
 }
 
 // ═══════════════════════════════════════
-// RULER
+// RULER (mirror-margin aware)
 // ═══════════════════════════════════════
 function drawRuler() {
   const canvas = document.getElementById('rulerCanvas');
@@ -1249,301 +1088,141 @@ function drawRuler() {
   ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(W,H); ctx.stroke();
   ctx.fillStyle = '#999'; ctx.font = '8px Nunito Sans,sans-serif'; ctx.textAlign = 'center';
-  const pageWpx = 793.7 * currentZoom; // 210mm at 96dpi * zoom
-  const ox = (W - pageWpx) / 2 + 53 * currentZoom;
+
+  const pageWpx = 793.7 * currentZoom;
+
+  // Mirror-margin aware offset: on even pages, left/right are swapped
+  const lVal = parseFloat(document.getElementById('mLeft')?.value || 0.1);
+  const rVal = parseFloat(document.getElementById('mRight')?.value || 0.1);
+  const isEvenPage = mirrorMargins && (_currentPage % 2 === 0);
+  const effectiveLeft = isEvenPage ? rVal : lVal;
+  const leftPx = effectiveLeft * 96 * currentZoom;
+
+  const ox = (W - pageWpx) / 2 + leftPx;
   for (let cm = 0; cm <= 18; cm++) {
     const x = ox + cm * 37.8 * currentZoom;
     const t = cm%2===0 ? 8 : 4;
     ctx.beginPath(); ctx.moveTo(x,H-t); ctx.lineTo(x,H); ctx.stroke();
     if (cm%2===0 && cm>0) ctx.fillText(cm, x, H-9);
   }
+
+  // Indicator when mirror is active
+  if (mirrorMargins) {
+    ctx.fillStyle = '#6a1b9a';
+    ctx.font = 'bold 8px Nunito Sans,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('⇄ Mirror', W - 4, H - 5);
+  }
 }
 
 // ═══════════════════════════════════════
-// SMART FORMAT  (* → bold / serial / both)
+// SMART FORMAT
 // ═══════════════════════════════════════
-function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function transformAsterisks(mode) {
-  const sel = window.getSelection();
-  let hasSel = false, range = null, selArea = null;
-
-  // Check if there is a real selection inside any columns-area
-  if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-    const r = sel.getRangeAt(0);
-    document.querySelectorAll('.columns-area').forEach(a => {
-      if (!selArea && a.contains(r.commonAncestorContainer)) { hasSel = true; range = r.cloneRange(); selArea = a; }
-    });
-  }
-
-  function buildHtml(text) {
-    let n = 1;
-    return text.split('\n').map(line => {
-      const t = line.trim();
-      if (t.startsWith('*')) {
-        const q = t.slice(1).trim();
-        if (mode==='bold')   return `<div><b>${escHtml(q)}</b></div>`;
-        if (mode==='serial') return `<div>${n++}. ${escHtml(q)}</div>`;
-        if (mode==='both')   return `<div><b>${n++}. ${escHtml(q)}</b></div>`;
-        return `<div>${escHtml(q)}</div>`;
-      }
-      return `<div>${escHtml(line)||'<br>'}</div>`;
-    }).join('');
-  }
-
-  if (hasSel) {
-    // Selection mode: transform only selected text in its area
-    const text = sel.toString();
-    if (!text.trim()) { alert('No content found.'); return; }
-    if (mode !== 'reset' && !text.split('\n').some(l => l.trim().startsWith('*'))) { alert('No lines starting with * found.'); return; }
-    selArea.focus(); sel.removeAllRanges(); sel.addRange(range);
-    document.execCommand('insertHTML', false, buildHtml(text));
-  } else {
-    // No-selection mode: gather ALL pages, merge, process, put in page 1, reflow distributes
-    const allAreas = [...document.querySelectorAll('.columns-area')];
-    const text = allAreas.map(a => a.innerText).join('\n').replace(/\n{3,}/g, '\n\n');
-    if (!text.trim()) { alert('No content found.'); return; }
-    if (mode !== 'reset' && !text.split('\n').some(l => l.trim().startsWith('*'))) { alert('No lines starting with * found.'); return; }
-    // Remove continuation pages, dump all HTML into page 1, let reflowPages redistribute
-    document.querySelectorAll('.page-cont').forEach(p => p.remove());
-    document.getElementById('columnsArea').innerHTML = buildHtml(text);
-  }
-
-  updateCounts();
-  setTimeout(reflowPages, 200);
+  const sel=window.getSelection();let hasSel=false,range=null,selArea=null;
+  if(sel&&sel.rangeCount>0&&!sel.isCollapsed){const r=sel.getRangeAt(0);document.querySelectorAll('.columns-area').forEach(a=>{if(!selArea&&a.contains(r.commonAncestorContainer)){hasSel=true;range=r.cloneRange();selArea=a;}});}
+  function buildHtml(text){let n=1;return text.split('\n').map(line=>{const t=line.trim();if(t.startsWith('*')){const q=t.slice(1).trim();if(mode==='bold')return`<div><b>${escHtml(q)}</b></div>`;if(mode==='serial')return`<div>${n++}. ${escHtml(q)}</div>`;if(mode==='both')return`<div><b>${n++}. ${escHtml(q)}</b></div>`;return`<div>${escHtml(q)}</div>`;}return`<div>${escHtml(line)||'<br>'}</div>`;}).join('');}
+  if(hasSel){const text=sel.toString();if(!text.trim()){alert('No content found.');return;}if(mode!=='reset'&&!text.split('\n').some(l=>l.trim().startsWith('*'))){alert('No lines starting with * found.');return;}selArea.focus();sel.removeAllRanges();sel.addRange(range);document.execCommand('insertHTML',false,buildHtml(text));}
+  else{const allAreas=[...document.querySelectorAll('.columns-area')];const text=allAreas.map(a=>a.innerText).join('\n').replace(/\n{3,}/g,'\n\n');if(!text.trim()){alert('No content found.');return;}if(mode!=='reset'&&!text.split('\n').some(l=>l.trim().startsWith('*'))){alert('No lines starting with * found.');return;}document.querySelectorAll('.page-cont').forEach(p=>p.remove());document.getElementById('columnsArea').innerHTML=buildHtml(text);}
+  updateCounts();setTimeout(reflowPages,200);
 }
 
-// ═══════════════════════════════════════
-// SMART FORMAT  (numbers → bold)
-// Detects lines in format:  1. Question text
-// Bolds the entire line keeping the number prefix
-// ═══════════════════════════════════════
 function transformNumbers(mode) {
-  const sel = window.getSelection();
-  let hasSel = false, range = null, selArea = null;
-
-  if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-    const r = sel.getRangeAt(0);
-    document.querySelectorAll('.columns-area').forEach(a => {
-      if (!selArea && a.contains(r.commonAncestorContainer)) { hasSel = true; range = r.cloneRange(); selArea = a; }
-    });
-  }
-
-  const numRegex = /^(\d+[\.\)]\s*)(.*)$/;
-
-  function buildHtml(text) {
-    return text.split('\n').map(line => {
-      const t = line.trim();
-      const m = t.match(numRegex);
-      if (m) {
-        // m[1] = "1. ", m[2] = "Question text"
-        const prefix = escHtml(m[1]);
-        const rest   = escHtml(m[2]);
-        return `<div><b>${prefix}${rest}</b></div>`;
-      }
-      return `<div>${escHtml(line)||'<br>'}</div>`;
-    }).join('');
-  }
-
-  if (hasSel) {
-    const text = sel.toString();
-    if (!text.trim()) { alert('No content found.'); return; }
-    if (!text.split('\n').some(l => numRegex.test(l.trim()))) { alert('No numbered lines (e.g. 1. Question) found in selection.'); return; }
-    selArea.focus(); sel.removeAllRanges(); sel.addRange(range);
-    document.execCommand('insertHTML', false, buildHtml(text));
-  } else {
-    const allAreas = [...document.querySelectorAll('.columns-area')];
-    const text = allAreas.map(a => a.innerText).join('\n').replace(/\n{3,}/g, '\n\n');
-    if (!text.trim()) { alert('No content found.'); return; }
-    if (!text.split('\n').some(l => numRegex.test(l.trim()))) { alert('No numbered lines (e.g. 1. Question) found.'); return; }
-    document.querySelectorAll('.page-cont').forEach(p => p.remove());
-    document.getElementById('columnsArea').innerHTML = buildHtml(text);
-  }
-
-  updateCounts();
-  setTimeout(reflowPages, 200);
+  const sel=window.getSelection();let hasSel=false,range=null,selArea=null;
+  if(sel&&sel.rangeCount>0&&!sel.isCollapsed){const r=sel.getRangeAt(0);document.querySelectorAll('.columns-area').forEach(a=>{if(!selArea&&a.contains(r.commonAncestorContainer)){hasSel=true;range=r.cloneRange();selArea=a;}});}
+  const numRegex=/^(\d+[\.\)]\s*)(.*)$/;
+  function buildHtml(text){return text.split('\n').map(line=>{const t=line.trim();const m=t.match(numRegex);if(m){const prefix=escHtml(m[1]);const rest=escHtml(m[2]);return`<div><b>${prefix}${rest}</b></div>`;}return`<div>${escHtml(line)||'<br>'}</div>`;}).join('');}
+  if(hasSel){const text=sel.toString();if(!text.trim()){alert('No content found.');return;}if(!text.split('\n').some(l=>numRegex.test(l.trim()))){alert('No numbered lines (e.g. 1. Question) found in selection.');return;}selArea.focus();sel.removeAllRanges();sel.addRange(range);document.execCommand('insertHTML',false,buildHtml(text));}
+  else{const allAreas=[...document.querySelectorAll('.columns-area')];const text=allAreas.map(a=>a.innerText).join('\n').replace(/\n{3,}/g,'\n\n');if(!text.trim()){alert('No content found.');return;}if(!text.split('\n').some(l=>numRegex.test(l.trim()))){alert('No numbered lines (e.g. 1. Question) found.');return;}document.querySelectorAll('.page-cont').forEach(p=>p.remove());document.getElementById('columnsArea').innerHTML=buildHtml(text);}
+  updateCounts();setTimeout(reflowPages,200);
 }
 
-// ═══════════════════════════════════════
-// REMOVE EMPTY LINES
-// Strips blank/whitespace-only lines from all pages
-// ═══════════════════════════════════════
 function removeEmptyLines() {
-  const allAreas = [...document.querySelectorAll('.columns-area')];
-  // Collect all text from every page
-  const text = allAreas.map(a => a.innerText).join('\n');
-  if (!text.trim()) { alert('No content found.'); return; }
-
-  // Filter out lines that are empty or whitespace-only
-  const cleaned = text.split('\n')
-    .filter(line => line.trim() !== '')
-    .join('\n');
-
-  // Build HTML divs
-  const html = cleaned.split('\n')
-    .map(line => `<div>${escHtml(line)}</div>`)
-    .join('');
-
-  // Dump into page 1 and reflow
-  document.querySelectorAll('.page-cont').forEach(p => p.remove());
-  document.getElementById('columnsArea').innerHTML = html;
-
-  updateCounts();
-  setTimeout(reflowPages, 200);
+  const allAreas=[...document.querySelectorAll('.columns-area')];
+  const text=allAreas.map(a=>a.innerText).join('\n');if(!text.trim()){alert('No content found.');return;}
+  const cleaned=text.split('\n').filter(line=>line.trim()!=='').join('\n');
+  const html=cleaned.split('\n').map(line=>`<div>${escHtml(line)}</div>`).join('');
+  document.querySelectorAll('.page-cont').forEach(p=>p.remove());
+  document.getElementById('columnsArea').innerHTML=html;
+  updateCounts();setTimeout(reflowPages,200);
 }
 
-
-// Rasterises each page using html2canvas + jsPDF.
-// MathJax SVGs are pre-converted to PNG data URIs so they render correctly.
-// On mobile uses Web Share API to share the PDF file directly.
-// On desktop triggers a direct download.
 // ═══════════════════════════════════════
+// PDF EXPORT
+// ═══════════════════════════════════════
+function _mjxSvgToPng(container,globalDefsHTML){return new Promise(resolve=>{const svg=container.querySelector('svg');if(!svg){resolve(null);return;}const cw=Math.max(container.offsetWidth||0,4);const ch=Math.max(container.offsetHeight||0,4);const clone=svg.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('xmlns:xlink','http://www.w3.org/1999/xlink');clone.setAttribute('width',cw*2+'px');clone.setAttribute('height',ch*2+'px');if(globalDefsHTML){let d=clone.querySelector('defs');if(!d){d=document.createElementNS('http://www.w3.org/2000/svg','defs');clone.insertBefore(d,clone.firstChild);}d.innerHTML=globalDefsHTML+d.innerHTML;}const dataURL='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));const img=new Image();img.onload=()=>{const cv=document.createElement('canvas');cv.width=cw*2;cv.height=ch*2;cv.getContext('2d').drawImage(img,0,0,cw*2,ch*2);resolve({png:cv.toDataURL('image/png'),cw,ch});};img.onerror=()=>resolve(null);img.src=dataURL;});}
+async function _rasteriseMath(){const globalDefs=document.querySelector('svg[style*="display"]');const defsHTML=globalDefs?(globalDefs.querySelector('defs')?.innerHTML||globalDefs.innerHTML):'';const map=new Map();for(const ctr of document.querySelectorAll('mjx-container')){const result=await _mjxSvgToPng(ctr,defsHTML);if(result)map.set(ctr,result);}return map;}
+function _serialiseArea(area,mathMap){const clone=area.cloneNode(true);const liveCtr=[...area.querySelectorAll('mjx-container')];const cloneCtr=[...clone.querySelectorAll('mjx-container')];liveCtr.forEach((liveEl,idx)=>{const data=mathMap.get(liveEl);const cloneEl=cloneCtr[idx];if(!data||!cloneEl)return;const img=document.createElement('img');img.src=data.png;img.width=data.cw;img.height=data.ch;img.style.cssText='vertical-align:middle;display:inline-block;max-width:none;';cloneEl.replaceWith(img);});return clone.innerHTML;}
+async function _fetchFontB64(url,family,format){try{const buf=await(await fetch(url)).arrayBuffer();const bytes=new Uint8Array(buf);let bin='';for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode(...bytes.subarray(i,i+8192));return`@font-face{font-family:${family};src:url(data:font/${format};base64,${btoa(bin)}) format('${format}');}`;} catch(e){console.warn('Font fetch failed:',url,e);return'';}}
+function _triggerDownload(blob,fileName){const url=URL.createObjectURL(blob);const a=Object.assign(document.createElement('a'),{href:url,download:fileName});document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),5000);}
 
-// ── Rasterise one MathJax SVG element to a PNG data URL ─────────────────
-function _mjxSvgToPng(container, globalDefsHTML) {
-  return new Promise(resolve => {
-    const svg = container.querySelector('svg');
-    if (!svg) { resolve(null); return; }
-    const cw = Math.max(container.offsetWidth  || 0, 4);
-    const ch = Math.max(container.offsetHeight || 0, 4);
-    const clone = svg.cloneNode(true);
-    clone.setAttribute('xmlns',       'http://www.w3.org/2000/svg');
-    clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-    clone.setAttribute('width',  cw * 2 + 'px');
-    clone.setAttribute('height', ch * 2 + 'px');
-    if (globalDefsHTML) {
-      let d = clone.querySelector('defs');
-      if (!d) { d = document.createElementNS('http://www.w3.org/2000/svg','defs'); clone.insertBefore(d,clone.firstChild); }
-      d.innerHTML = globalDefsHTML + d.innerHTML;
-    }
-    const dataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone));
-    const img = new Image();
-    img.onload = () => {
-      const cv = document.createElement('canvas');
-      cv.width = cw * 2; cv.height = ch * 2;
-      cv.getContext('2d').drawImage(img, 0, 0, cw * 2, ch * 2);
-      resolve({ png: cv.toDataURL('image/png'), cw, ch });
-    };
-    img.onerror = () => resolve(null);
-    img.src = dataURL;
-  });
-}
-
-async function _rasteriseMath() {
-  const globalDefs = document.querySelector('svg[style*="display"]');
-  const defsHTML   = globalDefs ? (globalDefs.querySelector('defs')?.innerHTML || globalDefs.innerHTML) : '';
-  const map = new Map();
-  for (const ctr of document.querySelectorAll('mjx-container')) {
-    const result = await _mjxSvgToPng(ctr, defsHTML);
-    if (result) map.set(ctr, result);
-  }
-  return map;
-}
-
-function _serialiseArea(area, mathMap) {
-  const clone    = area.cloneNode(true);
-  const liveCtr  = [...area.querySelectorAll('mjx-container')];
-  const cloneCtr = [...clone.querySelectorAll('mjx-container')];
-  liveCtr.forEach((liveEl, idx) => {
-    const data = mathMap.get(liveEl);
-    const cloneEl = cloneCtr[idx];
-    if (!data || !cloneEl) return;
-    const img = document.createElement('img');
-    img.src = data.png; img.width = data.cw; img.height = data.ch;
-    img.style.cssText = 'vertical-align:middle;display:inline-block;max-width:none;';
-    cloneEl.replaceWith(img);
-  });
-  return clone.innerHTML;
-}
-
-async function _fetchFontB64(url, family, format) {
-  try {
-    const buf   = await (await fetch(url)).arrayBuffer();
-    const bytes = new Uint8Array(buf);
-    let bin = '';
-    for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
-    return `@font-face{font-family:${family};src:url(data:font/${format};base64,${btoa(bin)}) format('${format}');}`;
-  } catch(e) { console.warn('Font fetch failed:', url, e); return ''; }
-}
-
-function _triggerDownload(blob, fileName) {
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href:url, download:fileName });
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+function getDocTitle() {
+  return (document.getElementById('docTitle')?.value || 'Shadab Document').trim() || 'Shadab Document';
 }
 
 async function savePDF() {
-  if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
-    alert('PDF library still loading — please try again in a moment.'); return;
-  }
-  const pages = [...document.querySelectorAll('.page')];
-  if (!pages.length) { alert('Nothing to export.'); return; }
-
-  const btn      = document.querySelector('button[onclick="savePDF()"]');
-  const origHTML = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = origHTML.replace(/Save PDF|Generating…|Compiling…/, 'Generating…'); }
-
+  if (typeof html2canvas==='undefined'||typeof jspdf==='undefined') { alert('PDF libraries loading, try again in a moment.'); return; }
+  const btn=document.querySelector('.rb[onclick="savePDF()"]');
+  const origHTML=btn?.innerHTML||'';
+  if(btn){btn.disabled=true;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/></svg> Saving…';}
   try {
-    const mathMap = await _rasteriseMath();
+    const mathMap=await _rasteriseMath();
+    const pages=[...document.querySelectorAll('.page')];
+    const area0=document.getElementById('columnsArea');
+    const aFont=area0?.style.fontFamily||"'EB Garamond',serif";
+    const aSize=area0?.style.fontSize||'13.6px';
+    const aLH=area0?.style.lineHeight||'1.65';
+    const isUrdu=area0?.classList.contains('urdu-mode')||false;
+    const aDir=isUrdu?'rtl':'ltr';
+    const t=parseFloat(document.getElementById('mTop')?.value||0.1);
+    const b=parseFloat(document.getElementById('mBot')?.value||0.1);
+    const l=parseFloat(document.getElementById('mLeft')?.value||0.1);
+    const r=parseFloat(document.getElementById('mRight')?.value||0.1);
 
-    const headline = document.querySelector('.headline')?.innerHTML || 'Shadab Coaching Centre';
-    const inputs   = [...document.querySelectorAll('.info-input')];
-    const [cls, subj, fm, time] = inputs.map(i => escHtml(i.value || ''));
-    const pad    = pages[0].style.padding || '0.1in';
-    const areaEl = pages[0].querySelector('.columns-area');
-    const aFont  = areaEl?.style.fontFamily || "'EB Garamond',Georgia,serif";
-    const aSize  = areaEl?.style.fontSize   || '14px';
-    const aLH    = areaEl?.style.lineHeight || '1.65';
-    const aDir   = areaEl?.dir || 'ltr';
-    const isUrdu = areaEl?.classList.contains('urdu-mode') || false;
-
-    let embeddedFontCSS = '';
-    if (isUrdu) {
-      embeddedFontCSS = await _fetchFontB64(
-        '../fonts/Jameel Noori Nastaleeq.ttf',
-        'JameelNooriNastaliq', 'truetype'
-      );
+    let embeddedFontCSS='';
+    const fontFaceStyle=document.getElementById('fontFaceStyle')?.textContent||'';
+    const urlMatches=[...fontFaceStyle.matchAll(/url\('([^']+)'\)\s*format\('([^']+)'\)/g)];
+    if(urlMatches.length>0){
+      const first=urlMatches[0];
+      const b64css=await _fetchFontB64(first[1],'EB Garamond',first[2]);
+      embeddedFontCSS+=b64css;
     }
 
-    function buildPageHTML(pg, idx) {
-      const area  = pg.querySelector('.columns-area');
-      const areaH = area ? area.offsetHeight + 'px' : '240mm';
-      const aHTML = area ? _serialiseArea(area, mathMap) : '';
-      if (idx === 0) {
-        const divs = [...pg.querySelectorAll('.page-divider')].map(h=>`<hr class="${h.className}">`).join('');
-        return `<div class="page">
+    function buildPageHTML(pg,i){
+      const area=pg.querySelector('.columns-area');
+      const aHTML=area?_serialiseArea(area,mathMap):'';
+      const areaH=area?.style.height||'auto';
+      const pi=i;
+      // For mirror margins, even pages swap l/r
+      const isEvenPage=mirrorMargins&&(pi%2===1);
+      const pl=isEvenPage?r:l; const pr=isEvenPage?l:r;
+      const pad=`${t}in ${pr}in ${b}in ${pl}in`;
+
+      if(i===0){
+        const headline=document.querySelector('.headline')?.innerText?.trim()||'';
+        const [cls,subj,fm,time_]=[...document.querySelectorAll('.info-input')].map(inp=>inp.value);
+        const divs=pg.querySelector('.page-header')?`
           <div class="page-header"><div class="headline">${headline}</div></div>
           <div class="info-row">
-            <div class="info-left">
-              <div class="info-field"><label>Class:</label><span class="info-val">${cls}</span></div>
-              <div class="info-field"><label>Subject:</label><span class="info-val">${subj}</span></div>
-            </div>
-            <div class="info-right">
-              <div class="info-field"><label>FM:</label><span class="info-val">${fm}</span></div>
-              <div class="info-field"><label>Time:</label><span class="info-val">${time}</span></div>
-            </div>
+            <div class="info-left"><div class="info-field"><label>Class:</label><span class="info-val">${cls||''}</span></div><div class="info-field"><label>Subject:</label><span class="info-val">${subj||''}</span></div></div>
+            <div class="info-right"><div class="info-field"><label>FM:</label><span class="info-val">${fm||''}</span></div><div class="info-field"><label>Time:</label><span class="info-val">${time_||''}</span></div></div>
           </div>
-          ${divs || '<hr class="page-divider"><hr class="page-divider thin">'}
-          <div class="columns-area" style="height:${areaH}">${aHTML}</div>
-        </div>`;
+          <hr class="page-divider"><hr class="page-divider thin">`:'';
+        return`<div class="page" style="padding:${pad}">${currentPreset==='exam'?divs:''}<div class="columns-area" style="height:${areaH}">${aHTML}</div></div>`;
       }
-      return `<div class="page"><div class="cont-label">— continued —</div><div class="columns-area" style="height:${areaH}">${aHTML}</div></div>`;
+      return`<div class="page" style="padding:${pad}"><div class="cont-label">— continued —</div><div class="columns-area" style="height:${areaH}">${aHTML}</div></div>`;
     }
 
-    const allPagesHTML = pages.map((pg,i) => buildPageHTML(pg,i)).join('\n');
-    const title = document.querySelector('.headline')?.innerText?.trim() || 'Shadab';
-
-    const externalLinks = [...document.head.querySelectorAll('link[rel="stylesheet"]')]
-      .filter(l => !l.href.includes('jameel-noori'))
-      .map(l => `<link rel="stylesheet" href="${l.href}">`)
-      .join('\n');
-
-    const renderCSS = `
+    const allPagesHTML=pages.map((pg,i)=>buildPageHTML(pg,i)).join('\n');
+    const title=getDocTitle();
+    const externalLinks=[...document.head.querySelectorAll('link[rel="stylesheet"]')].filter(l=>!l.href.includes('jameel-noori')).map(l=>`<link rel="stylesheet" href="${l.href}">`).join('\n');
+    const renderCSS=`
       ${embeddedFontCSS}
       *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
       html,body{background:#fff;width:794px;}
-      .page{width:794px;height:1123px;padding:${pad};background:#fff;overflow:hidden;position:relative;display:block;}
+      .page{width:794px;height:1123px;background:#fff;overflow:hidden;position:relative;display:block;}
       .page-header{text-align:center;margin-bottom:4px;}
       .headline{font-family:'EB Garamond',serif;font-size:20px;font-weight:700;letter-spacing:.5px;color:#111;line-height:1.15;margin-bottom:3px;}
       .info-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;font-family:'Nunito Sans',sans-serif;font-size:12px;}
@@ -1554,64 +1233,41 @@ async function savePDF() {
       .page-divider{border:none;border-top:2px solid #222;margin:6px 0 8px;}
       .page-divider.thin{border-top-width:1px;border-top-color:#999;margin:3px 0 8px;}
       .cont-label{font-size:13px;font-family:'EB Garamond',serif;color:#888;text-align:center;margin-bottom:6px;font-style:italic;}
-      .columns-area{column-count:3;column-gap:14px;column-rule:1px solid #ccc;column-fill:auto;overflow:hidden;
-        font-family:${aFont};font-size:${aSize};line-height:${aLH};color:#111;word-break:break-word;
-        text-align:${isUrdu?'right':'justify'};direction:${aDir};
-        ${isUrdu ? 'letter-spacing:0;word-spacing:0;' : ''}}
-      .columns-area div,.columns-area p{margin:0;min-height:1lh;${isUrdu ? 'letter-spacing:0;word-spacing:0;' : ''}}
+      .columns-area{column-count:3;column-gap:14px;column-rule:1px solid #ccc;column-fill:auto;overflow:hidden;font-family:${aFont};font-size:${aSize};line-height:${aLH};color:#111;word-break:break-word;text-align:${isUrdu?'right':'justify'};direction:${aDir};${isUrdu?'letter-spacing:0;word-spacing:0;':''}}
+      .columns-area div,.columns-area p{margin:0;min-height:1lh;${isUrdu?'letter-spacing:0;word-spacing:0;':''}}
       b,strong{font-weight:700;}i,em{font-style:italic;}u{text-decoration:underline;}
       hr{border:none;border-top:1px solid #aaa;margin:4px 0;}
       ol{margin:2px 0 2px 18px;padding:0;}ul{margin:2px 0 2px 18px;padding:0;}
     `;
-
-    const renderHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8">${externalLinks}<style>${renderCSS}</style></head><body>${allPagesHTML}</body></html>`;
-
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;left:-900px;top:0;width:794px;height:1123px;border:none;visibility:hidden;';
+    const renderHTML=`<!DOCTYPE html><html><head><meta charset="UTF-8">${externalLinks}<style>${renderCSS}</style></head><body>${allPagesHTML}</body></html>`;
+    const iframe=document.createElement('iframe');
+    iframe.style.cssText='position:fixed;left:-900px;top:0;width:794px;height:1123px;border:none;visibility:hidden;';
     document.body.appendChild(iframe);
-
-    const { jsPDF } = jspdf;
-    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
-
+    const {jsPDF}=jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
     try {
-      await new Promise(resolve => { iframe.onload = resolve; iframe.srcdoc = renderHTML; });
+      await new Promise(resolve=>{iframe.onload=resolve;iframe.srcdoc=renderHTML;});
       await iframe.contentDocument.fonts.ready;
-      await new Promise(r => setTimeout(r, 400));
-
-      const iframePages = [...iframe.contentDocument.querySelectorAll('.page')];
-      for (let i = 0; i < iframePages.length; i++) {
-        const pg = iframePages[i];
-        iframe.contentWindow.scrollTo(0, pg.offsetTop);
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-        const canvas = await html2canvas(pg, {
-          scale: 2, useCORS: true, allowTaint: true,
-          backgroundColor: '#ffffff', logging: false,
-          width: 794, height: 1123, x: 0, y: 0,
-          scrollX: 0, scrollY: -pg.offsetTop,
-          windowWidth: 794, windowHeight: 1123,
-        });
-        if (i > 0) pdf.addPage('a4','portrait');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, 210, 297);
+      await new Promise(r=>setTimeout(r,400));
+      const iframePages=[...iframe.contentDocument.querySelectorAll('.page')];
+      for(let i=0;i<iframePages.length;i++){
+        const pg=iframePages[i];
+        iframe.contentWindow.scrollTo(0,pg.offsetTop);
+        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+        const canvas=await html2canvas(pg,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',logging:false,width:794,height:1123,x:0,y:0,scrollX:0,scrollY:-pg.offsetTop,windowWidth:794,windowHeight:1123});
+        if(i>0)pdf.addPage('a4','portrait');
+        pdf.addImage(canvas.toDataURL('image/jpeg',0.97),'JPEG',0,0,210,297);
       }
-    } finally {
-      document.body.removeChild(iframe);
-    }
-
-    const pdfBlob = pdf.output('blob');
-    const fileName = title.replace(/[^\w\u0600-\u06FF\s._-]/g,'').replace(/\s+/g,'_') + '.pdf';
-    const pdfFile  = new File([pdfBlob], fileName, { type:'application/pdf' });
-
-    if (navigator.canShare?.({ files:[pdfFile] })) {
-      try { await navigator.share({ files:[pdfFile], title }); }
-      catch(e) { if (e.name !== 'AbortError') _triggerDownload(pdfBlob, fileName); }
-    } else {
-      _triggerDownload(pdfBlob, fileName);
-    }
-
+    } finally { document.body.removeChild(iframe); }
+    const pdfBlob=pdf.output('blob');
+    const fileName=title.replace(/[^\w\u0600-\u06FF\s._-]/g,'').replace(/\s+/g,'_')+'.pdf';
+    const pdfFile=new File([pdfBlob],fileName,{type:'application/pdf'});
+    if(navigator.canShare?.({files:[pdfFile]})){try{await navigator.share({files:[pdfFile],title});}catch(e){if(e.name!=='AbortError')_triggerDownload(pdfBlob,fileName);}}
+    else{_triggerDownload(pdfBlob,fileName);}
   } catch(err) {
-    if (err.name !== 'AbortError') { console.error('PDF error:', err); alert('PDF generation failed:\n\n' + err.message); }
+    if(err.name!=='AbortError'){console.error('PDF error:',err);alert('PDF generation failed:\n\n'+err.message);}
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
+    if(btn){btn.disabled=false;btn.innerHTML=origHTML;}
   }
 }
 
@@ -1619,398 +1275,248 @@ async function savePDF() {
 // SAVE AS DOCX
 // ═══════════════════════════════════════
 async function saveDocx() {
-  if (typeof docx === 'undefined') { alert('DOCX library loading, try again in a moment.'); return; }
-  const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, PageBreak } = docx;
-  const headline = document.querySelector('.headline')?.innerText?.trim() || 'Shadab Coaching Centre';
-  const fi = document.querySelectorAll('.info-input');
-  const [cls,subj,fm,time] = [...fi].map(i => i.value);
-  const kids = [];
-
-  kids.push(new Paragraph({ text:headline, heading:HeadingLevel.HEADING_1, alignment:AlignmentType.CENTER, spacing:{after:100} }));
-  if (cls||subj||fm||time) {
-    kids.push(new Paragraph({ children:[
-      new TextRun({ text: [cls&&`Class: ${cls}`, subj&&`Subject: ${subj}`, fm&&`FM: ${fm}`, time&&`Time: ${time}`].filter(Boolean).join('   ') })
-    ], spacing:{after:120} }));
-  }
-  kids.push(new Paragraph({ text:'─'.repeat(55), spacing:{after:120} }));
-
-  document.querySelectorAll('.columns-area').forEach((area, pi) => {
-    if (pi > 0) kids.push(new Paragraph({ children:[new PageBreak()] }));
-    [...area.childNodes].forEach(node => {
-      if (node.nodeType === 3) {
-        const t = node.textContent.trim();
-        if (t) kids.push(new Paragraph({ text:t, spacing:{after:60} }));
-        return;
-      }
-      if (node.nodeType !== 1) return;
-      // Check if it's a rendered LaTeX node
-      if (node.dataset?.latex) {
-        kids.push(new Paragraph({ text:`[LaTeX: ${node.dataset.latex}]`, spacing:{after:60} })); return;
-      }
-      const runs = [];
-      (function walk(el) {
-        el.childNodes.forEach(c => {
-          if (c.nodeType===3) {
-            const t = c.textContent;
-            if (t) runs.push(new TextRun({ text:t, bold:!!c.parentElement?.closest('b,strong') }));
-          } else if (c.nodeType===1) {
-            if (c.tagName==='BR') runs.push(new TextRun({text:'\n'}));
-            else walk(c);
-          }
-        });
-      })(node);
-      if (runs.length) kids.push(new Paragraph({ children:runs, spacing:{after:60} }));
+  if(typeof docx==='undefined'){alert('DOCX library loading, try again in a moment.');return;}
+  const{Document,Packer,Paragraph,TextRun,HeadingLevel,AlignmentType,PageBreak}=docx;
+  const headline=document.querySelector('.headline')?.innerText?.trim()||'Shadab Coaching Centre';
+  const fi=document.querySelectorAll('.info-input');
+  const[cls,subj,fm,time]=[...fi].map(i=>i.value);
+  const kids=[];
+  kids.push(new Paragraph({text:headline,heading:HeadingLevel.HEADING_1,alignment:AlignmentType.CENTER,spacing:{after:100}}));
+  if(cls||subj||fm||time){kids.push(new Paragraph({children:[new TextRun({text:[cls&&`Class: ${cls}`,subj&&`Subject: ${subj}`,fm&&`FM: ${fm}`,time&&`Time: ${time}`].filter(Boolean).join('   ')})],spacing:{after:120}}));}
+  kids.push(new Paragraph({text:'─'.repeat(55),spacing:{after:120}}));
+  document.querySelectorAll('.columns-area').forEach((area,pi)=>{
+    if(pi>0)kids.push(new Paragraph({children:[new PageBreak()]}));
+    [...area.childNodes].forEach(node=>{
+      if(node.nodeType===3){const t=node.textContent.trim();if(t)kids.push(new Paragraph({text:t,spacing:{after:60}}));return;}
+      if(node.nodeType!==1)return;
+      if(node.dataset?.latex){kids.push(new Paragraph({text:`[LaTeX: ${node.dataset.latex}]`,spacing:{after:60}}));return;}
+      const runs=[];
+      (function walk(el){el.childNodes.forEach(c=>{if(c.nodeType===3){const t=c.textContent;if(t)runs.push(new TextRun({text:t,bold:!!c.parentElement?.closest('b,strong')}));}else if(c.nodeType===1){if(c.tagName==='BR')runs.push(new TextRun({text:'\n'}));else walk(c);}});})(node);
+      if(runs.length)kids.push(new Paragraph({children:runs,spacing:{after:60}}));
     });
   });
-
-  const blob = await Packer.toBlob(new Document({
-    sections:[{ properties:{ page:{ margin:{top:680,right:793,bottom:680,left:793} } }, children:kids }]
-  }));
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href:url, download:`${headline}.docx` });
-  a.click(); URL.revokeObjectURL(url);
+  const l=parseFloat(document.getElementById('mLeft')?.value||0.1);
+  const r=parseFloat(document.getElementById('mRight')?.value||0.1);
+  const t=parseFloat(document.getElementById('mTop')?.value||0.1);
+  const b=parseFloat(document.getElementById('mBot')?.value||0.1);
+  const toTwip=v=>Math.round(v*1440);
+  const blob=await Packer.toBlob(new Document({sections:[{properties:{page:{margin:{top:toTwip(t),right:toTwip(r),bottom:toTwip(b),left:toTwip(l)}}},children:kids}]}));
+  const title=getDocTitle();
+  const url=URL.createObjectURL(blob);
+  const a=Object.assign(document.createElement('a'),{href:url,download:`${title}.docx`});
+  a.click();URL.revokeObjectURL(url);
 }
 
 // ═══════════════════════════════════════
-// INIT
+// MIRROR MARGINS (NEW)
 // ═══════════════════════════════════════
-window.addEventListener('load', () => {
-  drawRuler();
-  syncFonts(); // auto-load fonts on visit
-  const area = document.getElementById('columnsArea');
-  document.querySelectorAll('.info-input').forEach(i => i.addEventListener('focus', () => i.style.outline='none'));
+let mirrorMargins = false;
 
-  requestAnimationFrame(() => {
-    recalcColH(area);
-    bindArea(area);
-    cacheNatSize();
-    const s = document.getElementById('editorScroll');
+function toggleMirrorMargins() {
+  mirrorMargins = !mirrorMargins;
+  const btn = document.getElementById('mirrorMarginBtn');
+  btn.classList.toggle('on', mirrorMargins);
+  btn.title = mirrorMargins
+    ? 'Mirror margins ON — even pages have swapped left/right (book binding). Click to disable.'
+    : 'Toggle mirror margins (book/binding layout)';
+  // Re-apply margins with the new mirror state
+  applyMarginsInternal();
+  scheduleRuler();
+}
 
-    // Auto-fit: calculate zoom so the A4 page (210mm = ~794px) fits the viewport width
-    const pageNatW  = document.getElementById('page1').offsetWidth; // natural px width of one page
-    const wrapPad   = 80; // 40px each side padding
-    const fitZoom   = Math.min(1.0, (s.clientWidth - wrapPad) / (pageNatW + wrapPad));
-    const initZoom  = Math.max(0.3, parseFloat(fitZoom.toFixed(2)));
+function applyPageMarginTo(p, idx) {
+  const t = parseFloat(document.getElementById('mTop')?.value  || 0.1);
+  const b = parseFloat(document.getElementById('mBot')?.value  || 0.1);
+  const l = parseFloat(document.getElementById('mLeft')?.value || 0.1);
+  const r = parseFloat(document.getElementById('mRight')?.value || 0.1);
+  const isEven = mirrorMargins && (idx % 2 === 1);
+  p.style.padding = isEven
+    ? `${t}in ${l}in ${b}in ${r}in`   // even: swap — inner gutter on left (towards spine)
+    : `${t}in ${r}in ${b}in ${l}in`;
+}
 
-    applyZoom(initZoom, s.clientWidth / 2, s.clientHeight / 2);
-    rebuildPageNav(1);
-  });
-
-  // Close margin panel on outside click
-  document.addEventListener('click', e => {
-    const panel = document.getElementById('marginPanel');
-    const btn   = document.getElementById('marginBtn');
-    if (!panel.contains(e.target) && !btn.contains(e.target)) {
-      panel.classList.remove('open');
-    }
-  });
-
-  // KaTeX auto-render trigger
-  document.addEventListener('DOMContentLoaded', () => {
-    if (typeof renderMathInElement !== 'undefined') {
-      document.querySelectorAll('.columns-area').forEach(a => {
-        renderMathInElement(a, { delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false });
-      });
-    }
-  });
-});
+function applyMarginsInternal() {
+  document.querySelectorAll('.page').forEach((p, i) => applyPageMarginTo(p, i));
+  document.querySelectorAll('.columns-area').forEach(a => recalcColH(a));
+  setTimeout(reflowPages, 200);
+}
 
 // ═══════════════════════════════════════
-// LINE SPACING  (long-press on empty lines button)
-// ═══════════════════════════════════════
-let _spacingTimer = null;
-let _spacingMoved = false;
-
-function spacingPressStart(e) {
-  _spacingMoved = false;
-  _spacingTimer = setTimeout(() => {
-    _spacingMoved = true; // flag so release doesn't trigger removeEmptyLines
-    const panel = document.getElementById('spacingPanel');
-    const vw    = window.innerWidth;
-    const PW    = Math.min(220, vw - 16);
-    panel.style.width    = PW + 'px';
-    panel.style.position = 'fixed';
-    panel.style.top      = '120px';
-    panel.style.left     = Math.round((vw - PW) / 2) + 'px';
-    panel.classList.add('open');
-  }, 500);
-}
-
-function spacingPressEnd(e) {
-  clearTimeout(_spacingTimer);
-  if (!_spacingMoved) removeEmptyLines();
-}
-
-function spacingPressCancel() {
-  clearTimeout(_spacingTimer);
-  _spacingMoved = false;
-}
-
-// Close spacing panel on outside click
-document.addEventListener('click', e => {
-  const panel = document.getElementById('spacingPanel');
-  const btn   = document.getElementById('spacingBtn');
-  if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
-    panel.classList.remove('open');
-  }
-});
-
-function applyLineHeight(val) {
-  document.querySelectorAll('.columns-area').forEach(a => {
-    a.style.lineHeight = val;
-  });
-  setTimeout(reflowPages, 200);
-}
-
-function applyParaSpace(val) {
-  let style = document.getElementById('paraSpaceStyle');
-  if (!style) { style = document.createElement('style'); style.id = 'paraSpaceStyle'; document.head.appendChild(style); }
-  style.textContent = `.columns-area div, .columns-area p { margin-bottom: ${val}px; }`;
-  setTimeout(reflowPages, 200);
-}
-
-function applyLetterSpacing(val) {
-  document.querySelectorAll('.columns-area').forEach(a => {
-    a.style.letterSpacing = val + 'px';
-  });
-  setTimeout(reflowPages, 200);
-}
-
-function applyWordSpacing(val) {
-  document.querySelectorAll('.columns-area').forEach(a => {
-    a.style.wordSpacing = val + 'px';
-  });
-  setTimeout(reflowPages, 200);
-}
-
-function applyIndent(val) {
-  let style = document.getElementById('indentStyle');
-  if (!style) { style = document.createElement('style'); style.id = 'indentStyle'; document.head.appendChild(style); }
-  style.textContent = `.columns-area div, .columns-area p { text-indent: ${val}px; }`;
-  setTimeout(reflowPages, 200);
-}
-
-function resetSpacing() {
-  document.getElementById('lineHeightSlider').value  = 1.65;
-  document.getElementById('paraSpaceSlider').value   = 0;
-  document.getElementById('letterSpaceSlider').value = 0;
-  document.getElementById('wordSpaceSlider').value   = 0;
-  document.getElementById('indentSlider').value      = 0;
-  document.getElementById('lineHeightVal').textContent  = '1.65';
-  document.getElementById('paraSpaceVal').textContent   = '0px';
-  document.getElementById('letterSpaceVal').textContent = '0px';
-  document.getElementById('wordSpaceVal').textContent   = '0px';
-  document.getElementById('indentVal').textContent      = '0px';
-  document.querySelectorAll('.columns-area').forEach(a => {
-    a.style.lineHeight     = '1.65';
-    a.style.letterSpacing  = '';
-    a.style.wordSpacing    = '';
-  });
-  ['paraSpaceStyle','indentStyle'].forEach(id => {
-    const s = document.getElementById(id);
-    if (s) s.textContent = '';
-  });
-  setTimeout(reflowPages, 200);
-}
+// MARGIN PANEL
 // ═══════════════════════════════════════
 function toggleMarginPanel() {
   const panel = document.getElementById('marginPanel');
   const btn   = document.getElementById('marginBtn');
   const isOpen = panel.classList.contains('open');
   if (isOpen) { panel.classList.remove('open'); return; }
-
-  // Position panel so it never goes off-screen
   const br = btn.getBoundingClientRect();
-  const PW = 220; // panel width
-  const vw = window.innerWidth;
-
+  const PW = 220, vw = window.innerWidth;
   let left = br.left;
-  // Push left if it would overflow the right edge
   if (left + PW > vw - 8) left = vw - PW - 8;
-  // Never go off the left edge
   if (left < 8) left = 8;
-
   panel.style.top  = (br.bottom + 4) + 'px';
   panel.style.left = left + 'px';
   panel.classList.add('open');
 }
 
-// Margin helpers — all values in inches
-function inLabel(v) { return parseFloat(v).toFixed(2).replace(/\.?0+$/, '') + '″'; }
-
-function updateMarginLabel(sliderId, labelId) {
-  document.getElementById(labelId).textContent = inLabel(document.getElementById(sliderId).value);
-}
+function inLabel(v){return parseFloat(v).toFixed(2).replace(/\.?0+$/,'')+'″';}
+function updateMarginLabel(sliderId,labelId){document.getElementById(labelId).textContent=inLabel(document.getElementById(sliderId).value);}
 
 function setPresetMargin(preset) {
-  // A4 standard presets in inches
-  const presets = {
-    normal: { top:1.0,  bot:1.0,  left:1.25, right:1.25 },
-    narrow: { top:0.5,  bot:0.5,  left:0.5,  right:0.5  },
-    wide:   { top:1.5,  bot:1.5,  left:2.0,  right:2.0  },
-  };
-  const m = presets[preset];
-  ['Top','Bot','Left','Right'].forEach(k => {
-    const key = k === 'Bot' ? 'bot' : k.toLowerCase();
-    const id = 'm' + k;
-    document.getElementById(id).value = m[key];
-    document.getElementById(id + 'V').textContent = inLabel(m[key]);
-  });
+  const presets={normal:{top:1.0,bot:1.0,left:1.25,right:1.25},narrow:{top:0.5,bot:0.5,left:0.5,right:0.5},wide:{top:1.5,bot:1.5,left:2.0,right:2.0}};
+  const m=presets[preset];
+  ['Top','Bot','Left','Right'].forEach(k=>{const key=k==='Bot'?'bot':k.toLowerCase();const id='m'+k;document.getElementById(id).value=m[key];document.getElementById(id+'V').textContent=inLabel(m[key]);});
   applyMargins();
 }
 
 function applyMargins() {
-  const t = document.getElementById('mTop').value;
-  const b = document.getElementById('mBot').value;
-  const l = document.getElementById('mLeft').value;
-  const r = document.getElementById('mRight').value;
-  // Apply as inches — the browser respects in units natively
-  const padding = `${t}in ${r}in ${b}in ${l}in`;
-  document.querySelectorAll('.page').forEach(p => p.style.padding = padding);
-  // Recalc column heights on all pages after margin change
-  document.querySelectorAll('.columns-area').forEach(a => recalcColH(a));
-  setTimeout(reflowPages, 200);
+  applyMarginsInternal();
   document.getElementById('marginPanel').classList.remove('open');
+  scheduleRuler();
 }
 
 // ═══════════════════════════════════════
 // KEYBOARD LOCK
 // ═══════════════════════════════════════
 let kbLocked = false;
-
-function _kbLockInputFocus() { setTimeout(() => this.blur(), 0); }
+function _kbLockInputFocus(){setTimeout(()=>this.blur(),0);}
 
 function toggleKeyboardLock() {
   kbLocked = !kbLocked;
   const btn = document.getElementById('kbLockBtn');
-
   if (kbLocked) {
-    document.querySelectorAll('input[type="text"], input[type="number"]').forEach(inp => {
-      inp.dataset.kbPrevInputmode = inp.getAttribute('inputmode') || '';
-      inp.setAttribute('inputmode', 'none');
-      inp.setAttribute('readonly', 'readonly');
-      inp.dataset.kbLocked = '1';
-      inp.addEventListener('focus', _kbLockInputFocus);
-    });
-    document.querySelectorAll('[contenteditable]').forEach(el => {
-      const val = el.getAttribute('contenteditable');
-      if (val === 'true' || val === '') {
-        el.dataset.kbPrevCE = val;
-        el.setAttribute('contenteditable', 'false');
-        el.dataset.kbLocked = '1';
-      }
-    });
+    document.querySelectorAll('input[type="text"],input[type="number"]').forEach(inp=>{inp.dataset.kbPrevInputmode=inp.getAttribute('inputmode')||'';inp.setAttribute('inputmode','none');inp.setAttribute('readonly','readonly');inp.dataset.kbLocked='1';inp.addEventListener('focus',_kbLockInputFocus);});
+    document.querySelectorAll('[contenteditable]').forEach(el=>{const val=el.getAttribute('contenteditable');if(val==='true'||val===''){el.dataset.kbPrevCE=val;el.setAttribute('contenteditable','false');el.dataset.kbLocked='1';}});
   } else {
-    document.querySelectorAll('input[data-kb-locked]').forEach(inp => {
-      const prev = inp.dataset.kbPrevInputmode || '';
-      if (prev) inp.setAttribute('inputmode', prev); else inp.removeAttribute('inputmode');
-      inp.removeAttribute('readonly');
-      inp.removeEventListener('focus', _kbLockInputFocus);
-      delete inp.dataset.kbPrevInputmode;
-      delete inp.dataset.kbLocked;
-    });
-    document.querySelectorAll('[data-kb-locked]').forEach(el => {
-      if (el.tagName === 'INPUT') return;
-      el.setAttribute('contenteditable', el.dataset.kbPrevCE || 'true');
-      delete el.dataset.kbPrevCE;
-      delete el.dataset.kbLocked;
-    });
+    document.querySelectorAll('input[data-kb-locked]').forEach(inp=>{const prev=inp.dataset.kbPrevInputmode||'';if(prev)inp.setAttribute('inputmode',prev);else inp.removeAttribute('inputmode');inp.removeAttribute('readonly');inp.removeEventListener('focus',_kbLockInputFocus);delete inp.dataset.kbPrevInputmode;delete inp.dataset.kbLocked;});
+    document.querySelectorAll('[data-kb-locked]').forEach(el=>{if(el.tagName==='INPUT')return;el.setAttribute('contenteditable',el.dataset.kbPrevCE||'true');delete el.dataset.kbPrevCE;delete el.dataset.kbLocked;});
   }
-
-  btn.classList.toggle('locked', kbLocked);
-  btn.title = kbLocked ? 'Keyboard locked — tap to unlock' : 'Lock keyboard (scroll mode)';
-  const svg = btn.querySelector('svg');
-  if (kbLocked) {
-    svg.innerHTML = '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><line x1="12" y1="15" x2="12" y2="17" stroke-linecap="round" stroke-width="2.5"/>';
-  } else {
-    svg.innerHTML = '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
-  }
+  btn.classList.toggle('locked',kbLocked);
+  btn.title=kbLocked?'Keyboard locked — tap to unlock':'Lock keyboard (scroll mode)';
+  const svg=btn.querySelector('svg');
+  if(kbLocked)svg.innerHTML='<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><line x1="12" y1="15" x2="12" y2="17" stroke-linecap="round" stroke-width="2.5"/>';
+  else svg.innerHTML='<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
 }
 
 // ═══════════════════════════════════════
-// AUTO-SAVE  (localStorage — survives tab close / refresh)
+// LINE SPACING (long-press)
+// ═══════════════════════════════════════
+let _spacingTimer=null,_spacingMoved=false;
+function spacingPressStart(e){_spacingMoved=false;_spacingTimer=setTimeout(()=>{_spacingMoved=true;const panel=document.getElementById('spacingPanel');const vw=window.innerWidth;const PW=Math.min(220,vw-16);panel.style.width=PW+'px';panel.style.position='fixed';panel.style.top='120px';panel.style.left=Math.round((vw-PW)/2)+'px';panel.classList.add('open');},500);}
+function spacingPressEnd(e){clearTimeout(_spacingTimer);if(!_spacingMoved)removeEmptyLines();}
+function spacingPressCancel(){clearTimeout(_spacingTimer);_spacingMoved=false;}
+
+document.addEventListener('click',e=>{const panel=document.getElementById('spacingPanel');const btn=document.getElementById('spacingBtn');if(panel&&btn&&!panel.contains(e.target)&&!btn.contains(e.target))panel.classList.remove('open');});
+
+function applyLineHeight(val){document.querySelectorAll('.columns-area').forEach(a=>{a.style.lineHeight=val;});setTimeout(reflowPages,200);}
+function applyParaSpace(val){let style=document.getElementById('paraSpaceStyle');if(!style){style=document.createElement('style');style.id='paraSpaceStyle';document.head.appendChild(style);}style.textContent=`.columns-area div,.columns-area p{margin-bottom:${val}px;}`;setTimeout(reflowPages,200);}
+function applyLetterSpacing(val){document.querySelectorAll('.columns-area').forEach(a=>{a.style.letterSpacing=val+'px';});setTimeout(reflowPages,200);}
+function applyWordSpacing(val){document.querySelectorAll('.columns-area').forEach(a=>{a.style.wordSpacing=val+'px';});setTimeout(reflowPages,200);}
+function applyIndent(val){let style=document.getElementById('indentStyle');if(!style){style=document.createElement('style');style.id='indentStyle';document.head.appendChild(style);}style.textContent=`.columns-area div,.columns-area p{text-indent:${val}px;}`;setTimeout(reflowPages,200);}
+function resetSpacing(){
+  document.getElementById('lineHeightSlider').value=1.65;document.getElementById('paraSpaceSlider').value=0;document.getElementById('letterSpaceSlider').value=0;document.getElementById('wordSpaceSlider').value=0;document.getElementById('indentSlider').value=0;
+  document.getElementById('lineHeightVal').textContent='1.65';document.getElementById('paraSpaceVal').textContent='0px';document.getElementById('letterSpaceVal').textContent='0px';document.getElementById('wordSpaceVal').textContent='0px';document.getElementById('indentVal').textContent='0px';
+  document.querySelectorAll('.columns-area').forEach(a=>{a.style.lineHeight='1.65';a.style.letterSpacing='';a.style.wordSpacing='';});
+  ['paraSpaceStyle','indentStyle'].forEach(id=>{const s=document.getElementById(id);if(s)s.textContent='';});
+  setTimeout(reflowPages,200);
+}
+
+// Close margin panel on outside click
+document.addEventListener('click', e => {
+  const panel = document.getElementById('marginPanel');
+  const btn   = document.getElementById('marginBtn');
+  const mirrorBtn = document.getElementById('mirrorMarginBtn');
+  if (!panel.contains(e.target) && !btn.contains(e.target) && !mirrorBtn.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+
+// ═══════════════════════════════════════
+// AUTO-SAVE
 // ═══════════════════════════════════════
 const SAVE_KEY = 'shadab_editor_v1';
 let _autoSaveTimer = null;
 
 function collectState() {
-  // Save full innerHTML of every page's columns-area + info inputs
   const pages = [...document.querySelectorAll('.page')];
-  const data = {
-    v: 2,
-    ts: Date.now(),
+  return {
+    v: 2, ts: Date.now(),
     headline: document.querySelector('.headline')?.innerHTML || '',
-    pages: pages.map(p => {
-      const area = p.querySelector('.columns-area');
-      return {
-        id: p.id,
-        // Prefer pre-render source (has $…$ intact) over post-MathJax SVG
-        html: area?.dataset.latexSource || area?.innerHTML || '',
-        hasLatex: !!(area?.dataset.latexSource)
-      };
-    }),
-    inputs: {},
+    docTitle: document.getElementById('docTitle')?.value || '',
+    preset: currentPreset,
+    mirrorMargins,
+    margins: {
+      t: document.getElementById('mTop')?.value || '0.1',
+      b: document.getElementById('mBot')?.value || '0.1',
+      l: document.getElementById('mLeft')?.value || '0.1',
+      r: document.getElementById('mRight')?.value || '0.1',
+    },
+    pages: pages.map(p => ({
+      id: p.id,
+      html: p.querySelector('.columns-area')?.dataset.latexSource || p.querySelector('.columns-area')?.innerHTML || '',
+      hasLatex: !!(p.querySelector('.columns-area')?.dataset.latexSource)
+    })),
+    inputs: (() => {
+      const o = {};
+      document.querySelectorAll('.info-input').forEach((el,i) => { o[el.placeholder||i] = el.value; });
+      return o;
+    })(),
     font: document.getElementById('fontFamily')?.value || '',
     fontSize: document.getElementById('fontSize')?.value || '10',
   };
-  document.querySelectorAll('.info-input').forEach((el, i) => {
-    data.inputs[el.placeholder || i] = el.value;
-  });
-  return data;
 }
 
 function applyState(data) {
   if (!data || data.v < 2) return false;
-  if (data.headline !== undefined) {
-    const h = document.querySelector('.headline');
-    if (h) h.innerHTML = data.headline;
+  if (data.headline !== undefined) { const h=document.querySelector('.headline');if(h)h.innerHTML=data.headline; }
+  if (data.docTitle) { const t=document.getElementById('docTitle');if(t)t.value=data.docTitle; }
+  // Restore preset
+  if (data.preset && (data.preset === 'exam' || data.preset === 'blank')) setPreset(data.preset);
+  // Restore mirror margins
+  if (typeof data.mirrorMargins === 'boolean') {
+    mirrorMargins = data.mirrorMargins;
+    document.getElementById('mirrorMarginBtn')?.classList.toggle('on', mirrorMargins);
   }
-  // Restore page 1 columns area
+  // Restore margins
+  if (data.margins) {
+    const {t,b,l,r} = data.margins;
+    if(t){document.getElementById('mTop').value=t;document.getElementById('mTopV').textContent=inLabel(t);}
+    if(b){document.getElementById('mBot').value=b;document.getElementById('mBotV').textContent=inLabel(b);}
+    if(l){document.getElementById('mLeft').value=l;document.getElementById('mLeftV').textContent=inLabel(l);}
+    if(r){document.getElementById('mRight').value=r;document.getElementById('mRightV').textContent=inLabel(r);}
+    applyMarginsInternal();
+  }
   const p1area = document.getElementById('columnsArea');
   if (p1area && data.pages?.[0]) {
     p1area.innerHTML = data.pages[0].html;
-    // If this was pre-render LaTeX source, store it back and re-typeset
     if (data.pages[0].hasLatex) {
       p1area.dataset.latexSource = data.pages[0].html;
-      // Re-run MathJax once it's ready
       if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-        MathJax.typesetPromise([p1area]).catch(e => console.warn('MathJax restore error:', e));
+        MathJax.typesetPromise([p1area]).catch(e => console.warn('MathJax restore error:',e));
       } else {
-        // MathJax not yet loaded — wait for it
-        window.addEventListener('load', () => {
-          if (MathJax?.typesetPromise) MathJax.typesetPromise([p1area]).catch(()=>{});
-        }, { once: true });
+        window.addEventListener('load', ()=>{if(MathJax?.typesetPromise)MathJax.typesetPromise([p1area]).catch(()=>{});},{once:true});
       }
     }
   }
-  // Restore info inputs
-  document.querySelectorAll('.info-input').forEach((el) => {
-    const val = data.inputs?.[el.placeholder];
-    if (val !== undefined) el.value = val;
-  });
-  if (data.font) { document.getElementById('fontFamily').value = data.font; applyFont(data.font); }
-  if (data.fontSize) { document.getElementById('fontSize').value = data.fontSize; applyFontSize(data.fontSize); }
+  document.querySelectorAll('.info-input').forEach(el=>{const val=data.inputs?.[el.placeholder];if(val!==undefined)el.value=val;});
+  if(data.font){document.getElementById('fontFamily').value=data.font;applyFont(data.font);}
+  if(data.fontSize){document.getElementById('fontSize').value=data.fontSize;applyFontSize(data.fontSize);}
   return true;
 }
 
 function setAutosaveDot(state) {
-  const dot = document.getElementById('autosaveDot');
-  const lbl = document.getElementById('autosaveLabel');
-  if (!dot) return;
-  dot.className = 'autosave-dot' + (state === 'saving' ? ' saving' : state === 'error' ? ' error' : '');
-  if (lbl) lbl.title = state === 'ok' ? 'Auto-saved to browser storage' : state === 'saving' ? 'Saving…' : 'Save error';
+  const dot=document.getElementById('autosaveDot');const lbl=document.getElementById('autosaveLabel');
+  if(!dot)return;
+  dot.className='autosave-dot'+(state==='saving'?' saving':state==='error'?' error':'');
+  if(lbl)lbl.title=state==='ok'?'Auto-saved to browser storage':state==='saving'?'Saving…':'Save error';
 }
 
 function autoSave() {
   try {
     setAutosaveDot('saving');
-    const json = JSON.stringify(collectState());
-    localStorage.setItem(SAVE_KEY, json);
+    localStorage.setItem(SAVE_KEY, JSON.stringify(collectState()));
     setAutosaveDot('ok');
-  } catch(e) {
-    setAutosaveDot('error');
-    console.warn('AutoSave failed:', e);
-  }
+  } catch(e) { setAutosaveDot('error');console.warn('AutoSave failed:',e); }
 }
 
 function scheduleAutoSave() {
@@ -2018,43 +1524,29 @@ function scheduleAutoSave() {
   _autoSaveTimer = setTimeout(autoSave, 1500);
 }
 
-function localSaveNow() {
-  autoSave();
-  setDriveStatus('✅ Saved to browser storage.');
-}
-
-function localLoad() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) { setDriveStatus('⚠️ No saved data found.'); return; }
-    const data = JSON.parse(raw);
-    document.querySelectorAll('.page-cont').forEach(p => p.remove());
-    if (applyState(data)) {
-      setDriveStatus('✅ Restored. ' + new Date(data.ts).toLocaleString());
-      setTimeout(reflowPages, 300);
-    } else {
-      setDriveStatus('⚠️ Saved data format not recognised.');
-    }
-  } catch(e) { setDriveStatus('❌ Error loading: ' + e.message); }
-}
-
-function localClear() {
-  if (!confirm('Clear all browser-saved data?')) return;
-  localStorage.removeItem(SAVE_KEY);
-  setDriveStatus('🗑️ Cleared.');
-}
-
 // Auto-save on every edit
 document.addEventListener('input', e => {
-  if (e.target.closest('.columns-area') || e.target.closest('.info-input') || e.target.closest('.headline')) {
-    // If user edits after a LaTeX render, the latexSource is stale — clear it
+  if (e.target.closest('.columns-area') || e.target.closest('.info-input') || e.target.closest('.headline') || e.target.id === 'docTitle') {
     const area = e.target.closest('.columns-area');
     if (area && area.dataset.latexSource) delete area.dataset.latexSource;
     scheduleAutoSave();
   }
 });
 
-// Restore on load — wait for MathJax to be ready before re-typesetting
+// ═══════════════════════════════════════
+// LOCAL SAVE / LOAD / CLEAR
+// ═══════════════════════════════════════
+function localSaveNow(){autoSave();setDriveStatus('✅ Saved to browser storage.');}
+function localLoad(){
+  try{const raw=localStorage.getItem(SAVE_KEY);if(!raw){setDriveStatus('⚠️ No saved data found.');return;}
+  const data=JSON.parse(raw);document.querySelectorAll('.page-cont').forEach(p=>p.remove());
+  if(applyState(data)){setDriveStatus('✅ Restored. '+new Date(data.ts).toLocaleString());setTimeout(reflowPages,300);}
+  else setDriveStatus('⚠️ Saved data format not recognised.');
+  }catch(e){setDriveStatus('❌ Error loading: '+e.message);}
+}
+function localClear(){if(!confirm('Clear all browser-saved data?'))return;localStorage.removeItem(SAVE_KEY);setDriveStatus('🗑️ Cleared.');}
+
+// Restore on load
 window.addEventListener('load', () => {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -2066,152 +1558,55 @@ window.addEventListener('load', () => {
       setTimeout(reflowPages, 400);
       setAutosaveDot('ok');
     }
-  } catch(e) { console.warn('Auto-restore failed:', e); }
+  } catch(e) { console.warn('Auto-restore failed:',e); }
 });
 
 // ═══════════════════════════════════════
-// EXPORT / IMPORT  .shadab file
-// Stores full HTML with UTF-8 BOM so encoding is always preserved
+// EXPORT / IMPORT .shadab
 // ═══════════════════════════════════════
 function exportFile() {
   try {
-    const state = collectState();
-    // Wrap in a self-contained JSON envelope
-    const envelope = {
-      app: 'ShadabPageEditor',
-      version: 2,
-      exported: new Date().toISOString(),
-      state
-    };
+    const title = getDocTitle();
+    const envelope = {app:'ShadabPageEditor',version:2,exported:new Date().toISOString(),state:collectState()};
     const json = JSON.stringify(envelope, null, 2);
-    // UTF-8 BOM ensures any editor/importer sees correct encoding
-    const bom  = '\uFEFF';
-    const blob = new Blob([bom + json], { type: 'application/json;charset=utf-8' });
+    const blob = new Blob(['\uFEFF' + json], {type:'application/json;charset=utf-8'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'shadab_' + new Date().toISOString().slice(0,10) + '.shadab';
+    a.href = url;
+    a.download = title.replace(/[^\w\s._-]/g,'').replace(/\s+/g,'_') + '.shadab';
     a.click();
     URL.revokeObjectURL(url);
     setDriveStatus('✅ File downloaded.');
-  } catch(e) { setDriveStatus('❌ Export failed: ' + e.message); }
+  } catch(e) { setDriveStatus('❌ Export failed: '+e.message); }
 }
 
 function importFile(evt) {
-  const file = evt.target.files[0];
-  if (!file) return;
+  const file = evt.target.files[0]; if(!file)return;
   setDriveStatus('⏳ Reading file…');
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      // Strip BOM if present
-      let text = e.target.result.replace(/^\uFEFF/, '');
+      let text = e.target.result.replace(/^\uFEFF/,'');
       const envelope = JSON.parse(text);
-      const data = envelope.state || envelope; // support both formats
-      document.querySelectorAll('.page-cont').forEach(p => p.remove());
-      if (applyState(data)) {
-        setTimeout(reflowPages, 300);
-        autoSave(); // persist to localStorage too
-        setDriveStatus('✅ Imported: ' + file.name);
-      } else {
-        setDriveStatus('⚠️ File format not recognised.');
-      }
-    } catch(err) { setDriveStatus('❌ Import failed: ' + err.message); }
-    evt.target.value = ''; // reset input
+      const data = envelope.state || envelope;
+      document.querySelectorAll('.page-cont').forEach(p=>p.remove());
+      if(applyState(data)){setTimeout(reflowPages,300);autoSave();setDriveStatus('✅ Imported: '+file.name);}
+      else setDriveStatus('⚠️ File format not recognised.');
+    } catch(err){setDriveStatus('❌ Import failed: '+err.message);}
+    evt.target.value='';
   };
-  reader.readAsText(file, 'UTF-8');
+  reader.readAsText(file,'UTF-8');
 }
 
 // ═══════════════════════════════════════
-// GOOGLE DRIVE  (Picker API + Drive REST v3)
-// User must paste their own Client ID in the prompt the first time
+// GOOGLE DRIVE
 // ═══════════════════════════════════════
-// ═══════════════════════════════════════
-// GOOGLE DRIVE  via Apps Script Web App
-// No OAuth, no Client ID — just your Gmail
-// ═══════════════════════════════════════
-function getScriptUrl() {
-  const url = localStorage.getItem('shadab_script_url') || '';
-  const input = document.getElementById('scriptUrl');
-  if (input && !input.value && url) input.value = url;
-  return url;
-}
-
-function driveSaveUrl() {
-  const input = document.getElementById('scriptUrl');
-  const url = input ? input.value.trim() : '';
-  if (!url) { setDriveStatus('⚠️ Paste your Apps Script URL first.'); return; }
-  localStorage.setItem('shadab_script_url', url);
-  setDriveStatus('✅ URL saved!');
-}
-
-// Load saved URL into input on panel open
-function toggleDrivePanel() {
-  const panel = document.getElementById('drivePanel');
-  panel.classList.toggle('open');
-  if (panel.classList.contains('open')) {
-    const saved = localStorage.getItem('shadab_script_url') || '';
-    const input = document.getElementById('scriptUrl');
-    if (input && saved) input.value = saved;
-  }
-}
-
-async function driveExport() {
-  const url = localStorage.getItem('shadab_script_url') || document.getElementById('scriptUrl')?.value.trim();
-  if (!url) { setDriveStatus('⚠️ No Apps Script URL set.'); return; }
-  try {
-    setDriveStatus('⏳ Saving to Drive…');
-    const envelope = {
-      app: 'ShadabPageEditor', version: 2,
-      exported: new Date().toISOString(),
-      state: collectState()
-    };
-    const res = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(envelope),
-      headers: { 'Content-Type': 'text/plain' } // Apps Script needs text/plain for doPost
-    });
-    const json = await res.json();
-    if (json.success) {
-      setDriveStatus('✅ Saved to Google Drive!');
-      autoSave();
-    } else {
-      setDriveStatus('❌ ' + (json.error || 'Unknown error'));
-    }
-  } catch(e) { setDriveStatus('❌ ' + e.message); }
-}
-
-async function driveImport() {
-  const url = localStorage.getItem('shadab_script_url') || document.getElementById('scriptUrl')?.value.trim();
-  if (!url) { setDriveStatus('⚠️ No Apps Script URL set.'); return; }
-  try {
-    setDriveStatus('⏳ Loading from Drive…');
-    const res  = await fetch(url);
-    const text = (await res.text()).replace(/^\uFEFF/, '');
-    const envelope = JSON.parse(text);
-    const data = envelope.state || envelope;
-    document.querySelectorAll('.page-cont').forEach(p => p.remove());
-    if (applyState(data)) {
-      setTimeout(reflowPages, 300);
-      autoSave();
-      const d = envelope.exported ? new Date(envelope.exported).toLocaleString() : '';
-      setDriveStatus('✅ Loaded!' + (d ? ' Saved: ' + d : ''));
-    } else {
-      setDriveStatus('⚠️ File format not recognised.');
-    }
-  } catch(e) { setDriveStatus('❌ ' + e.message); }
-}
-
-
-function setDriveStatus(msg) {
-  const el = document.getElementById('driveStatus');
-  if (el) el.textContent = msg;
-}
-
-function toggleDrivePanel() {
-  const panel = document.getElementById('drivePanel');
-  panel.classList.toggle('open');
-}
+function getScriptUrl(){const url=localStorage.getItem('shadab_script_url')||'';const input=document.getElementById('scriptUrl');if(input&&!input.value&&url)input.value=url;return url;}
+function driveSaveUrl(){const input=document.getElementById('scriptUrl');const url=input?input.value.trim():'';if(!url){setDriveStatus('⚠️ Paste your Apps Script URL first.');return;}localStorage.setItem('shadab_script_url',url);setDriveStatus('✅ URL saved!');}
+function toggleDrivePanel(){const panel=document.getElementById('drivePanel');panel.classList.toggle('open');if(panel.classList.contains('open')){const saved=localStorage.getItem('shadab_script_url')||'';const input=document.getElementById('scriptUrl');if(input&&saved)input.value=saved;}}
+async function driveExport(){const url=localStorage.getItem('shadab_script_url')||document.getElementById('scriptUrl')?.value.trim();if(!url){setDriveStatus('⚠️ No Apps Script URL set.');return;}try{setDriveStatus('⏳ Saving to Drive…');const envelope={app:'ShadabPageEditor',version:2,exported:new Date().toISOString(),state:collectState()};const res=await fetch(url,{method:'POST',body:JSON.stringify(envelope),headers:{'Content-Type':'text/plain'}});const json=await res.json();if(json.success){setDriveStatus('✅ Saved to Google Drive!');autoSave();}else{setDriveStatus('❌ '+(json.error||'Unknown error'));}}catch(e){setDriveStatus('❌ '+e.message);}}
+async function driveImport(){const url=localStorage.getItem('shadab_script_url')||document.getElementById('scriptUrl')?.value.trim();if(!url){setDriveStatus('⚠️ No Apps Script URL set.');return;}try{setDriveStatus('⏳ Loading from Drive…');const res=await fetch(url);const text=(await res.text()).replace(/^\uFEFF/,'');const envelope=JSON.parse(text);const data=envelope.state||envelope;document.querySelectorAll('.page-cont').forEach(p=>p.remove());if(applyState(data)){setTimeout(reflowPages,300);autoSave();const d=envelope.exported?new Date(envelope.exported).toLocaleString():'';setDriveStatus('✅ Loaded!'+(d?' Saved: '+d:''));}else setDriveStatus('⚠️ File format not recognised.');}catch(e){setDriveStatus('❌ '+e.message);}}
+function setDriveStatus(msg){const el=document.getElementById('driveStatus');if(el)el.textContent=msg;}
 
 // Close drive panel on outside click
 document.addEventListener('click', e => {
@@ -2220,6 +1615,40 @@ document.addEventListener('click', e => {
   if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
     panel.classList.remove('open');
   }
+});
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.addEventListener('load', () => {
+  drawRuler();
+  syncFonts();
+  const area = document.getElementById('columnsArea');
+  document.querySelectorAll('.info-input').forEach(i => i.addEventListener('focus', () => i.style.outline='none'));
+
+  requestAnimationFrame(() => {
+    recalcColH(area);
+    bindArea(area);
+    cacheNatSize();
+    const s = document.getElementById('editorScroll');
+    const pageNatW  = document.getElementById('page1').offsetWidth;
+    const wrapPad   = 80;
+    const fitZoom   = Math.min(1.0, (s.clientWidth - wrapPad) / (pageNatW + wrapPad));
+    const initZoom  = Math.max(0.3, parseFloat(fitZoom.toFixed(2)));
+    applyZoom(initZoom, s.clientWidth / 2, s.clientHeight / 2);
+    rebuildPageNav(1);
+    // Start the WPS-style MutationObserver
+    startPageObserver();
+  });
+
+  // KaTeX auto-render fallback
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof renderMathInElement !== 'undefined') {
+      document.querySelectorAll('.columns-area').forEach(a => {
+        renderMathInElement(a, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});
+      });
+    }
+  });
 });
 </script>
 </body>
