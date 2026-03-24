@@ -1637,8 +1637,15 @@ let _autoSaveTimer = null;
 
 function collectState() {
   const pages = [...document.querySelectorAll('.page')];
+  // Merge all column-area content into one HTML string so restore is lossless
+  const allHtml = pages.map(p => {
+    const area = p.querySelector('.columns-area');
+    return area?.dataset.latexSource || area?.innerHTML || '';
+  }).join('');
+  const hasLatex = pages.some(p => !!(p.querySelector('.columns-area')?.dataset.latexSource));
+
   return {
-    v: 2, ts: Date.now(),
+    v: 3, ts: Date.now(),
     headline: document.querySelector('.headline')?.innerHTML || '',
     docTitle: document.getElementById('docTitle')?.value || '',
     preset: currentPreset,
@@ -1649,6 +1656,10 @@ function collectState() {
       l: document.getElementById('mLeft')?.value || '0.1',
       r: document.getElementById('mRight')?.value || '0.1',
     },
+    // v3: flat combined HTML — reflowPages repaginates on restore
+    allHtml,
+    hasLatex,
+    // legacy v2 compat: keep pages array so older restore path still works
     pages: pages.map(p => ({
       id: p.id,
       html: p.querySelector('.columns-area')?.dataset.latexSource || p.querySelector('.columns-area')?.innerHTML || '',
@@ -1661,21 +1672,38 @@ function collectState() {
     })(),
     font: document.getElementById('fontFamily')?.value || '',
     fontSize: document.getElementById('fontSize')?.value || '10',
+    spacing: {
+      lineHeight:   document.getElementById('lineHeightSlider')?.value   || '1.65',
+      paraSpace:    document.getElementById('paraSpaceSlider')?.value    || '0',
+      letterSpace:  document.getElementById('letterSpaceSlider')?.value  || '0',
+      wordSpace:    document.getElementById('wordSpaceSlider')?.value    || '0',
+      indent:       document.getElementById('indentSlider')?.value       || '0',
+    },
   };
 }
 
 function applyState(data) {
-  if (!data || data.v < 2) return false;
-  if (data.headline !== undefined) { const h=document.querySelector('.headline');if(h)h.innerHTML=data.headline; }
-  if (data.docTitle) { const t=document.getElementById('docTitle');if(t)t.value=data.docTitle; }
-  // Restore preset
+  if (!data || (data.v < 2)) return false;
+
+  // ── headline ───────────────────────────────────────────────────────
+  if (data.headline !== undefined) {
+    const h = document.querySelector('.headline');
+    if (h) h.innerHTML = data.headline;
+  }
+  // ── doc title ──────────────────────────────────────────────────────
+  if (data.docTitle) {
+    const t = document.getElementById('docTitle');
+    if (t) t.value = data.docTitle;
+  }
+  // ── preset ────────────────────────────────────────────────────────
   if (data.preset && (data.preset === 'exam' || data.preset === 'blank')) setPreset(data.preset);
-  // Restore mirror margins
+
+  // ── mirror margins ────────────────────────────────────────────────
   if (typeof data.mirrorMargins === 'boolean') {
     mirrorMargins = data.mirrorMargins;
     document.getElementById('mirrorMarginBtn')?.classList.toggle('on', mirrorMargins);
   }
-  // Restore margins
+  // ── margins ───────────────────────────────────────────────────────
   if (data.margins) {
     const {t,b,l,r} = data.margins;
     if(t){document.getElementById('mTop').value=t;document.getElementById('mTopV').textContent=inLabel(t);}
@@ -1684,21 +1712,71 @@ function applyState(data) {
     if(r){document.getElementById('mRight').value=r;document.getElementById('mRightV').textContent=inLabel(r);}
     applyMarginsInternal();
   }
-  const p1area = document.getElementById('columnsArea');
-  if (p1area && data.pages?.[0]) {
-    p1area.innerHTML = data.pages[0].html;
-    if (data.pages[0].hasLatex) {
-      p1area.dataset.latexSource = data.pages[0].html;
-      if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-        MathJax.typesetPromise([p1area]).catch(e => console.warn('MathJax restore error:',e));
-      } else {
-        window.addEventListener('load', ()=>{if(MathJax?.typesetPromise)MathJax.typesetPromise([p1area]).catch(()=>{});},{once:true});
-      }
+  // ── inputs (class / subject / FM / time) ──────────────────────────
+  document.querySelectorAll('.info-input').forEach(el => {
+    const val = data.inputs?.[el.placeholder];
+    if (val !== undefined) el.value = val;
+  });
+  // ── font / size ───────────────────────────────────────────────────
+  if (data.font) { document.getElementById('fontFamily').value = data.font; applyFont(data.font); }
+  if (data.fontSize) { document.getElementById('fontSize').value = data.fontSize; applyFontSize(data.fontSize); }
+
+  // ── spacing sliders ───────────────────────────────────────────────
+  if (data.spacing) {
+    const {lineHeight,paraSpace,letterSpace,wordSpace,indent} = data.spacing;
+    if(lineHeight){
+      document.getElementById('lineHeightSlider').value=lineHeight;
+      document.getElementById('lineHeightVal').textContent=parseFloat(lineHeight).toFixed(2);
+      applyLineHeight(lineHeight);
+    }
+    if(paraSpace){
+      document.getElementById('paraSpaceSlider').value=paraSpace;
+      document.getElementById('paraSpaceVal').textContent=paraSpace+'px';
+      applyParaSpace(paraSpace);
+    }
+    if(letterSpace){
+      document.getElementById('letterSpaceSlider').value=letterSpace;
+      document.getElementById('letterSpaceVal').textContent=parseFloat(letterSpace).toFixed(1)+'px';
+      applyLetterSpacing(letterSpace);
+    }
+    if(wordSpace){
+      document.getElementById('wordSpaceSlider').value=wordSpace;
+      document.getElementById('wordSpaceVal').textContent=parseFloat(wordSpace).toFixed(1)+'px';
+      applyWordSpacing(wordSpace);
+    }
+    if(indent){
+      document.getElementById('indentSlider').value=indent;
+      document.getElementById('indentVal').textContent=indent+'px';
+      applyIndent(indent);
     }
   }
-  document.querySelectorAll('.info-input').forEach(el=>{const val=data.inputs?.[el.placeholder];if(val!==undefined)el.value=val;});
-  if(data.font){document.getElementById('fontFamily').value=data.font;applyFont(data.font);}
-  if(data.fontSize){document.getElementById('fontSize').value=data.fontSize;applyFontSize(data.fontSize);}
+
+  // ── content: dump ALL saved HTML into page 1, let reflowPages repaginate ──
+  // Remove any existing continuation pages first
+  document.querySelectorAll('.page-cont').forEach(p => p.remove());
+
+  const p1area = document.getElementById('columnsArea');
+  if (p1area) {
+    // v3: merged allHtml  |  v2 fallback: concatenate pages array
+    const restoredHtml = (data.v >= 3 && data.allHtml !== undefined)
+      ? data.allHtml
+      : (data.pages || []).map(p => p.html || '').join('');
+
+    p1area.innerHTML = restoredHtml;
+
+    const hasLatex = data.hasLatex || data.pages?.some(p => p.hasLatex);
+    if (hasLatex) {
+      p1area.dataset.latexSource = restoredHtml;
+      const doTypeset = () => {
+        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+          MathJax.typesetPromise([p1area]).catch(e => console.warn('MathJax restore error:', e));
+        }
+      };
+      if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) doTypeset();
+      else window.addEventListener('load', doTypeset, { once: true });
+    }
+  }
+
   return true;
 }
 
@@ -1736,10 +1814,17 @@ document.addEventListener('input', e => {
 // ═══════════════════════════════════════
 function localSaveNow(){autoSave();setDriveStatus('✅ Saved to browser storage.');}
 function localLoad(){
-  try{const raw=localStorage.getItem(SAVE_KEY);if(!raw){setDriveStatus('⚠️ No saved data found.');return;}
-  const data=JSON.parse(raw);document.querySelectorAll('.page-cont').forEach(p=>p.remove());
-  if(applyState(data)){setDriveStatus('✅ Restored. '+new Date(data.ts).toLocaleString());setTimeout(reflowPages,300);}
-  else setDriveStatus('⚠️ Saved data format not recognised.');
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw){setDriveStatus('⚠️ No saved data found.');return;}
+    const data=JSON.parse(raw);
+    document.querySelectorAll('.page-cont').forEach(p=>p.remove());
+    if(applyState(data)){
+      setTimeout(()=>{reflowPages();updateCounts();},500);
+      setDriveStatus('✅ Restored. '+new Date(data.ts).toLocaleString());
+    } else {
+      setDriveStatus('⚠️ Saved data format not recognised.');
+    }
   }catch(e){setDriveStatus('❌ Error loading: '+e.message);}
 }
 function localClear(){if(!confirm('Clear all browser-saved data?'))return;localStorage.removeItem(SAVE_KEY);setDriveStatus('🗑️ Cleared.');}
@@ -1750,13 +1835,16 @@ window.addEventListener('load', () => {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return;
     const data = JSON.parse(raw);
-    if (data && data.v === 2 && data.pages?.[0]?.html) {
+    // Accept v2 (legacy) and v3 (current)
+    const hasContent = data?.pages?.[0]?.html || data?.allHtml;
+    if (data && data.v >= 2 && hasContent) {
       document.querySelectorAll('.page-cont').forEach(p => p.remove());
       applyState(data);
-      setTimeout(reflowPages, 400);
+      // Give fonts/size a moment to apply before reflowing
+      setTimeout(() => { reflowPages(); updateCounts(); }, 500);
       setAutosaveDot('ok');
     }
-  } catch(e) { console.warn('Auto-restore failed:',e); }
+  } catch(e) { console.warn('Auto-restore failed:', e); }
 });
 
 // ═══════════════════════════════════════
