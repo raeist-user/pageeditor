@@ -75,6 +75,9 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
 .doc-title-input::placeholder{color:rgba(255,255,255,.5);}
 .doc-title-input:focus{border-bottom-color:#fff;}
 .fb-hint{font-size:10px;color:rgba(255,255,255,.45);margin-left:auto;white-space:nowrap;}
+.fb-action-btn{height:24px;width:24px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:4px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;flex-shrink:0;}
+.fb-action-btn:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.5);}
+.fb-action-btn:active{background:rgba(255,255,255,.38);}
 
 /* ── RIBBON ── */
 .ribbon{background:var(--tb);border-bottom:1px solid var(--tb-border);padding:3px 8px;display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
@@ -247,7 +250,14 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
 <div class="filename-bar">
   <span class="fb-icon">📄</span>
   <input type="text" class="doc-title-input" id="docTitle" placeholder="Untitled Document" value="Shadab Exam Paper" title="Click to rename document">
-  <span class="fb-hint">Click title to rename</span>
+  <div style="margin-left:auto;display:flex;gap:4px;align-items:center;">
+    <button class="fb-action-btn" onclick="document.execCommand('undo')" title="Undo (Ctrl+Z)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+    </button>
+    <button class="fb-action-btn" onclick="document.execCommand('redo')" title="Redo (Ctrl+Y)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+    </button>
+  </div>
 </div>
 
 <div class="toolbar-area">
@@ -337,15 +347,11 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
       <rect x="13" y="3" width="9" height="18" rx="1"/>
       <line x1="11" y1="12" x2="13" y2="12" stroke-width="1.5" stroke-dasharray="1 1"/>
     </svg>
-    Mirror
   </button>
   <div class="rsep"></div>
   <button class="rb kb-lock" id="kbLockBtn" onclick="toggleKeyboardLock()" title="Lock keyboard (scroll mode)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
   </button>
-  <div class="rsep"></div>
-  <button class="rb" onclick="document.execCommand('undo')" title="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></button>
-  <button class="rb" onclick="document.execCommand('redo')" title="Redo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></button>
 </div>
 
 <!-- ═══ ROW 3: Bold · Italic · Underline · Smart Format · Spacing ═══ -->
@@ -379,16 +385,8 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
   </div>
 </div>
 
-<!-- ═══ ROW 4: Page Navigation · Insert Image · Preset Selector ═══ -->
-<div class="nav-ribbon" id="navRibbon">
-  <!-- Page navigation cluster -->
-  <span style="font-size:11px;color:#666;font-weight:600;margin-right:2px;white-space:nowrap;">Pages:</span>
-  <button class="pg-nav-r" onclick="navPage(-1)" title="Previous page">&#8249;</button>
-  <div class="pg-btn-row" id="pgBtnRow"></div>
-  <button class="pg-nav-r" onclick="navPage(+1)" title="Next page">&#8250;</button>
-  <span class="page-info-lbl" id="pageInfoLbl">1 of 1</span>
-  <div class="rsep"></div>
-
+<!-- ═══ ROW 4: Insert Image · Preset Selector ═══ -->
+<div class="ribbon" style="padding:3px 8px;gap:4px;">
   <!-- Insert Image -->
   <button class="rb" onclick="triggerInsertImage()" title="Insert image at cursor position" style="font-size:11px;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -418,6 +416,16 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
       </div>
     </div>
   </div>
+</div>
+
+<!-- ═══ ROW 5: Page Navigation ═══ -->
+<div class="nav-ribbon" id="navRibbon">
+  <!-- Page navigation cluster -->
+  <span style="font-size:11px;color:#666;font-weight:600;margin-right:2px;white-space:nowrap;">Pages:</span>
+  <button class="pg-nav-r" onclick="navPage(-1)" title="Previous page">&#8249;</button>
+  <div class="pg-btn-row" id="pgBtnRow"></div>
+  <button class="pg-nav-r" onclick="navPage(+1)" title="Next page">&#8250;</button>
+  <span class="page-info-lbl" id="pageInfoLbl">1 of 1</span>
 </div>
 
 </div><!-- /toolbar-area -->
@@ -1272,39 +1280,229 @@ async function savePDF() {
 }
 
 // ═══════════════════════════════════════
-// SAVE AS DOCX
+// SAVE AS DOCX  (WPS-compatible)
 // ═══════════════════════════════════════
 async function saveDocx() {
   if(typeof docx==='undefined'){alert('DOCX library loading, try again in a moment.');return;}
-  const{Document,Packer,Paragraph,TextRun,HeadingLevel,AlignmentType,PageBreak}=docx;
-  const headline=document.querySelector('.headline')?.innerText?.trim()||'Shadab Coaching Centre';
-  const fi=document.querySelectorAll('.info-input');
-  const[cls,subj,fm,time]=[...fi].map(i=>i.value);
-  const kids=[];
-  kids.push(new Paragraph({text:headline,heading:HeadingLevel.HEADING_1,alignment:AlignmentType.CENTER,spacing:{after:100}}));
-  if(cls||subj||fm||time){kids.push(new Paragraph({children:[new TextRun({text:[cls&&`Class: ${cls}`,subj&&`Subject: ${subj}`,fm&&`FM: ${fm}`,time&&`Time: ${time}`].filter(Boolean).join('   ')})],spacing:{after:120}}));}
-  kids.push(new Paragraph({text:'─'.repeat(55),spacing:{after:120}}));
-  document.querySelectorAll('.columns-area').forEach((area,pi)=>{
-    if(pi>0)kids.push(new Paragraph({children:[new PageBreak()]}));
-    [...area.childNodes].forEach(node=>{
-      if(node.nodeType===3){const t=node.textContent.trim();if(t)kids.push(new Paragraph({text:t,spacing:{after:60}}));return;}
-      if(node.nodeType!==1)return;
-      if(node.dataset?.latex){kids.push(new Paragraph({text:`[LaTeX: ${node.dataset.latex}]`,spacing:{after:60}}));return;}
-      const runs=[];
-      (function walk(el){el.childNodes.forEach(c=>{if(c.nodeType===3){const t=c.textContent;if(t)runs.push(new TextRun({text:t,bold:!!c.parentElement?.closest('b,strong')}));}else if(c.nodeType===1){if(c.tagName==='BR')runs.push(new TextRun({text:'\n'}));else walk(c);}});})(node);
-      if(runs.length)kids.push(new Paragraph({children:runs,spacing:{after:60}}));
+
+  const {
+    Document, Packer, Paragraph, TextRun,
+    HeadingLevel, AlignmentType,
+    SectionType, BorderStyle, WidthType,
+    Table, TableRow, TableCell,
+    convertMillimetersToTwip: _cmtt
+  } = docx;
+  // Fallback: 1 mm = 56.693 twips
+  const convertMillimetersToTwip = _cmtt || (mm => Math.round(mm * 56.693));
+
+  const isBlank = currentPreset === 'blank';
+
+  // ── helpers ──────────────────────────────────────────────────────────
+  const toTwip = v => Math.round(parseFloat(v) * 1440);
+
+  // Walk a DOM node tree and emit TextRun objects (preserving bold/italic/underline)
+  function walkRuns(el, inherited) {
+    const runs = [];
+    el.childNodes.forEach(c => {
+      if (c.nodeType === 3) {
+        const txt = c.textContent;
+        if (!txt) return;
+        runs.push(new TextRun({
+          text: txt,
+          bold: inherited.bold,
+          italics: inherited.italic,
+          underline: inherited.underline ? { type: 'single' } : undefined,
+          rtl: inherited.rtl || undefined,
+        }));
+        return;
+      }
+      if (c.nodeType !== 1) return;
+      const tag = c.tagName.toUpperCase();
+      if (tag === 'BR') { runs.push(new TextRun({ text: '', break: 1 })); return; }
+      const next = {
+        bold:      inherited.bold      || tag === 'B' || tag === 'STRONG',
+        italic:    inherited.italic    || tag === 'I' || tag === 'EM',
+        underline: inherited.underline || tag === 'U',
+        rtl:       inherited.rtl,
+      };
+      runs.push(...walkRuns(c, next));
+    });
+    return runs;
+  }
+
+  // Convert a single DOM block node → one or more Paragraphs
+  function nodeToParagraphs(node, opts = {}) {
+    const paras = [];
+    if (node.nodeType === 3) {
+      const t = node.textContent.trim();
+      if (t) paras.push(new Paragraph({ text: t, spacing: { after: 60 }, ...opts }));
+      return paras;
+    }
+    if (node.nodeType !== 1) return paras;
+    const tag = node.tagName.toUpperCase();
+    if (tag === 'HR') {
+      paras.push(new Paragraph({
+        text: '',
+        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '888888' } },
+        spacing: { before: 60, after: 60 },
+        ...opts
+      }));
+      return paras;
+    }
+    // Don't emit anything for images in DOCX (they'd need binary embedding)
+    if (tag === 'IMG') return paras;
+    const runs = walkRuns(node, { bold: false, italic: false, underline: false, rtl: false });
+    if (runs.length) {
+      paras.push(new Paragraph({ children: runs, spacing: { after: 60 }, ...opts }));
+    }
+    return paras;
+  }
+
+  // Convert a full columns-area element to Paragraphs (skip empty nodes)
+  function areaToParagraphs(area) {
+    const paras = [];
+    area.childNodes.forEach(node => {
+      paras.push(...nodeToParagraphs(node));
+    });
+    // Remove any leading/trailing blank paragraphs
+    while (paras.length && !paras[0].root?.children?.length && paras[0].options?.text === '') paras.shift();
+    return paras;
+  }
+
+  // ── read margins ─────────────────────────────────────────────────────
+  const mL = toTwip(document.getElementById('mLeft')?.value  || 0.5);
+  const mR = toTwip(document.getElementById('mRight')?.value || 0.5);
+  const mT = toTwip(document.getElementById('mTop')?.value   || 0.5);
+  const mB = toTwip(document.getElementById('mBot')?.value   || 0.5);
+
+  // ── column spec (3 cols, equal width, ~0.5 cm gap) ───────────────────
+  const colSpec = {
+    count: 3,
+    space: convertMillimetersToTwip(5),
+    equalWidth: true,
+  };
+
+  // ── build header paragraphs for page 1 (exam preset only) ────────────
+  function buildHeaderParagraphs() {
+    const out = [];
+    if (isBlank) return out;
+
+    const headline = document.querySelector('.headline')?.innerText?.trim() || 'Shadab Coaching Centre';
+    out.push(new Paragraph({
+      children: [new TextRun({ text: headline, bold: true, size: 28 })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100 },
+    }));
+
+    const fi    = [...document.querySelectorAll('.info-input')];
+    const cls   = fi[0]?.value || '';
+    const subj  = fi[1]?.value || '';
+    const fm    = fi[2]?.value || '';
+    const time  = fi[3]?.value || '';
+    const parts = [
+      cls  && `Class: ${cls}`,
+      subj && `Subject: ${subj}`,
+    ].filter(Boolean);
+    const parts2 = [
+      fm   && `FM: ${fm}`,
+      time && `Time: ${time}`,
+    ].filter(Boolean);
+
+    if (parts.length || parts2.length) {
+      // Two-column info row via a simple table
+      out.push(new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top:          { style: BorderStyle.NONE, size: 0 },
+          bottom:       { style: BorderStyle.NONE, size: 0 },
+          left:         { style: BorderStyle.NONE, size: 0 },
+          right:        { style: BorderStyle.NONE, size: 0 },
+          insideH:      { style: BorderStyle.NONE, size: 0 },
+          insideV:      { style: BorderStyle.NONE, size: 0 },
+        },
+        rows: [new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 60, type: WidthType.PERCENTAGE },
+              borders: { top:{style:BorderStyle.NONE,size:0},bottom:{style:BorderStyle.NONE,size:0},left:{style:BorderStyle.NONE,size:0},right:{style:BorderStyle.NONE,size:0} },
+              children: parts.map(t => new Paragraph({ children:[new TextRun({text:t,size:19})], spacing:{after:40} })),
+            }),
+            new TableCell({
+              width: { size: 40, type: WidthType.PERCENTAGE },
+              borders: { top:{style:BorderStyle.NONE,size:0},bottom:{style:BorderStyle.NONE,size:0},left:{style:BorderStyle.NONE,size:0},right:{style:BorderStyle.NONE,size:0} },
+              children: parts2.map(t => new Paragraph({ children:[new TextRun({text:t,size:19})], alignment:AlignmentType.RIGHT, spacing:{after:40} })),
+            }),
+          ],
+        })],
+      }));
+    }
+
+    // Divider line
+    out.push(new Paragraph({
+      text: '',
+      border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: '222222' } },
+      spacing: { before: 60, after: 120 },
+    }));
+
+    return out;
+  }
+
+  // ── assemble sections (one docx section per editor page area) ─────────
+  const areas   = [...document.querySelectorAll('.columns-area')];
+  const sections = [];
+
+  areas.forEach((area, pi) => {
+    const children = [];
+
+    if (pi === 0) {
+      children.push(...buildHeaderParagraphs());
+    }
+
+    const contentParas = areaToParagraphs(area);
+    // Guarantee at least one paragraph so WPS doesn't crash on empty section
+    if (contentParas.length === 0) {
+      contentParas.push(new Paragraph({ text: '' }));
+    }
+    children.push(...contentParas);
+
+    sections.push({
+      properties: {
+        type: pi === 0 ? undefined : SectionType.NEXT_PAGE,
+        column: colSpec,
+        page: {
+          size: { width: convertMillimetersToTwip(210), height: convertMillimetersToTwip(297) },
+          margin: { top: mT, right: mR, bottom: mB, left: mL },
+        },
+      },
+      children,
     });
   });
-  const l=parseFloat(document.getElementById('mLeft')?.value||0.1);
-  const r=parseFloat(document.getElementById('mRight')?.value||0.1);
-  const t=parseFloat(document.getElementById('mTop')?.value||0.1);
-  const b=parseFloat(document.getElementById('mBot')?.value||0.1);
-  const toTwip=v=>Math.round(v*1440);
-  const blob=await Packer.toBlob(new Document({sections:[{properties:{page:{margin:{top:toTwip(t),right:toTwip(r),bottom:toTwip(b),left:toTwip(l)}}},children:kids}]}));
-  const title=getDocTitle();
-  const url=URL.createObjectURL(blob);
-  const a=Object.assign(document.createElement('a'),{href:url,download:`${title}.docx`});
-  a.click();URL.revokeObjectURL(url);
+
+  // Ensure at least one section
+  if (sections.length === 0) {
+    sections.push({
+      properties: {
+        column: colSpec,
+        page: { size: { width: convertMillimetersToTwip(210), height: convertMillimetersToTwip(297) }, margin: { top: mT, right: mR, bottom: mB, left: mL } },
+      },
+      children: [new Paragraph({ text: '' })],
+    });
+  }
+
+  try {
+    const blob  = await Packer.toBlob(new Document({
+      compatibility: { doNotExpandShiftReturn: true },
+      sections,
+    }));
+    const title = getDocTitle().replace(/[^\w\u0600-\u06FF\s._-]/g,'').replace(/\s+/g,'_');
+    const url   = URL.createObjectURL(blob);
+    const a     = Object.assign(document.createElement('a'), { href: url, download: `${title}.docx` });
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(err) {
+    console.error('DOCX export error:', err);
+    alert('DOCX export failed:\n' + err.message);
+  }
 }
 
 // ═══════════════════════════════════════
