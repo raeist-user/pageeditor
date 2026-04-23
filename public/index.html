@@ -1195,11 +1195,25 @@ async function savePDF() {
 
     let embeddedFontCSS='';
     const fontFaceStyle=document.getElementById('fontFaceStyle')?.textContent||'';
-    const urlMatches=[...fontFaceStyle.matchAll(/url\('([^']+)'\)\s*format\('([^']+)'\)/g)];
-    if(urlMatches.length>0){
-      const first=urlMatches[0];
-      const b64css=await _fetchFontB64(first[1],'EB Garamond',first[2]);
-      embeddedFontCSS+=b64css;
+
+    // Extract all @font-face entries: [fullMatch, family, url, format]
+    const faceEntries=[...fontFaceStyle.matchAll(
+      /font-family:'([^']+)';[^}]*src:url\('([^']+)'\)\s*format\('([^']+)'\)/g
+    )];
+
+    // Determine which font family is actually active in the editor
+    const activeFamilyRaw=(area0?.style.fontFamily||'')
+      .replace(/['"]/g,'').split(',')[0].trim().toLowerCase();
+
+    // Match the active font's @font-face entry; fall back to first available
+    const matchedFace=faceEntries.find(([,fam])=>
+      fam.toLowerCase()===activeFamilyRaw
+    )||faceEntries[0];
+
+    if(matchedFace){
+      const[,family,url,format]=matchedFace;
+      // Embed with the CORRECT family name so the CSS font-family lookup succeeds
+      embeddedFontCSS=await _fetchFontB64(url,family,format);
     }
 
     function buildPageHTML(pg,i){
@@ -1237,15 +1251,15 @@ async function savePDF() {
       .page{width:794px;height:1123px;background:#fff;overflow:hidden;position:relative;display:block;}
       .page-header{text-align:center;margin-bottom:4px;}
       .headline{font-family:'EB Garamond',serif;font-size:20px;font-weight:700;letter-spacing:.5px;color:#111;line-height:1.15;margin-bottom:3px;}
-      .info-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;font-family:'Nunito Sans',sans-serif;font-size:12px;}
+      .info-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;font-family:'Nunito Sans',sans-serif;font-size:12px;${isUrdu?'flex-direction:row-reverse;':''}}
       .info-left,.info-right{display:flex;flex-direction:column;gap:4px;}
-      .info-field{display:flex;align-items:center;gap:6px;}
+      .info-field{display:flex;align-items:center;gap:6px;${isUrdu?'flex-direction:row-reverse;':''}}
       .info-field label{font-weight:700;color:#222;min-width:48px;font-size:11px;}
       .info-val{font-family:'EB Garamond',serif;font-size:13px;color:#111;border-bottom:1.5px solid #555;min-width:80px;padding:1px 2px;display:inline-block;}
       .page-divider{border:none;border-top:2px solid #222;margin:6px 0 8px;}
       .page-divider.thin{border-top-width:1px;border-top-color:#999;margin:3px 0 8px;}
       .cont-label{font-size:13px;font-family:'EB Garamond',serif;color:#888;text-align:center;margin-bottom:6px;font-style:italic;}
-      .columns-area{column-count:3;column-gap:14px;column-rule:1px solid #ccc;column-fill:auto;overflow:hidden;font-family:${aFont};font-size:${aSize};line-height:${aLH};color:#111;word-break:break-word;text-align:${isUrdu?'right':'justify'};direction:${aDir};${isUrdu?'letter-spacing:0;word-spacing:0;':''}}
+      .columns-area{column-count:3;column-gap:14px;column-rule:1px solid #ccc;column-fill:balance;overflow:hidden;font-family:${aFont};font-size:${aSize};line-height:${aLH};color:#111;word-break:break-word;text-align:${isUrdu?'right':'justify'};direction:${aDir};${isUrdu?'letter-spacing:0;word-spacing:0;':''}}
       .columns-area div,.columns-area p{margin:0;${isUrdu?'min-height:0;letter-spacing:0;word-spacing:0;':'min-height:1lh;'}}
       b,strong{font-weight:700;}i,em{font-style:italic;}u{text-decoration:underline;}
       hr{border:none;border-top:1px solid #aaa;margin:4px 0;}
@@ -1260,7 +1274,8 @@ async function savePDF() {
     try {
       await new Promise(resolve=>{iframe.onload=resolve;iframe.srcdoc=renderHTML;});
       await iframe.contentDocument.fonts.ready;
-      await new Promise(r=>setTimeout(r,400));
+      // Extra wait for large Urdu fonts (Nastaleeq) to fully render
+      await new Promise(r=>setTimeout(r, isUrdu ? 900 : 400));
       const iframePages=[...iframe.contentDocument.querySelectorAll('.page')];
       for(let i=0;i<iframePages.length;i++){
         const pg=iframePages[i];
