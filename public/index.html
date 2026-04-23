@@ -237,7 +237,11 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
   .editor-scroll{overflow:visible!important;background:none;}
   .zoom-outer,.zoom-wrapper{position:static!important;transform:none!important;width:auto!important;height:auto!important;padding:0!important;gap:0!important;}
   .page{box-shadow:none!important;overflow:visible!important;page-break-after:always;break-after:page;height:297mm!important;width:210mm!important;margin:0!important;}
-  .columns-area{overflow:visible!important;height:auto!important;}
+  /* column-fill:balance so columns spread evenly; height:auto lets content breathe */
+  .columns-area{overflow:visible!important;height:auto!important;column-fill:balance!important;}
+  /* Urdu RTL in print: force right-align and collapse inflated min-height */
+  .columns-area.urdu-mode{text-align:right!important;}
+  .columns-area.urdu-mode div,.columns-area.urdu-mode p{min-height:0!important;}
   body,html{overflow:visible!important;height:auto!important;}
   .app,.main-area{height:auto!important;overflow:visible!important;}
 }
@@ -1182,7 +1186,7 @@ async function savePDF() {
     const aFont=area0?.style.fontFamily||"'EB Garamond',serif";
     const aSize=area0?.style.fontSize||'13.6px';
     const aLH=area0?.style.lineHeight||'1.65';
-    const isUrdu=area0?.classList.contains('urdu-mode')||false;
+    const isUrdu=(area0?.classList.contains('urdu-mode')||urduMode)||false;
     const aDir=isUrdu?'rtl':'ltr';
     const t=parseFloat(document.getElementById('mTop')?.value||0.1);
     const b=parseFloat(document.getElementById('mBot')?.value||0.1);
@@ -1242,7 +1246,7 @@ async function savePDF() {
       .page-divider.thin{border-top-width:1px;border-top-color:#999;margin:3px 0 8px;}
       .cont-label{font-size:13px;font-family:'EB Garamond',serif;color:#888;text-align:center;margin-bottom:6px;font-style:italic;}
       .columns-area{column-count:3;column-gap:14px;column-rule:1px solid #ccc;column-fill:auto;overflow:hidden;font-family:${aFont};font-size:${aSize};line-height:${aLH};color:#111;word-break:break-word;text-align:${isUrdu?'right':'justify'};direction:${aDir};${isUrdu?'letter-spacing:0;word-spacing:0;':''}}
-      .columns-area div,.columns-area p{margin:0;min-height:1lh;${isUrdu?'letter-spacing:0;word-spacing:0;':''}}
+      .columns-area div,.columns-area p{margin:0;${isUrdu?'min-height:0;letter-spacing:0;word-spacing:0;':'min-height:1lh;'}}
       b,strong{font-weight:700;}i,em{font-style:italic;}u{text-decoration:underline;}
       hr{border:none;border-top:1px solid #aaa;margin:4px 0;}
       ol{margin:2px 0 2px 18px;padding:0;}ul{margin:2px 0 2px 18px;padding:0;}
@@ -1670,6 +1674,7 @@ function collectState() {
       document.querySelectorAll('.info-input').forEach((el,i) => { o[el.placeholder||i] = el.value; });
       return o;
     })(),
+    urduMode: urduMode,
     font: document.getElementById('fontFamily')?.value || '',
     fontSize: document.getElementById('fontSize')?.value || '10',
     spacing: {
@@ -1720,6 +1725,24 @@ function applyState(data) {
   // ── font / size ───────────────────────────────────────────────────
   if (data.font) { document.getElementById('fontFamily').value = data.font; applyFont(data.font); }
   if (data.fontSize) { document.getElementById('fontSize').value = data.fontSize; applyFontSize(data.fontSize); }
+
+  // ── urdu mode ─────────────────────────────────────────────────────
+  // Must be restored AFTER font/size so applyUrduToArea overrides correctly.
+  if (typeof data.urduMode === 'boolean' && data.urduMode && !urduMode) {
+    urduMode = true;
+    const jnnFont = "'JNN','JameelNooriNastaliq',serif";
+    _jnnFontValue = jnnFont;
+    document.querySelectorAll('.columns-area').forEach(a => applyUrduToArea(a));
+    document.querySelectorAll('.page').forEach(p => { p.style.direction = 'rtl'; });
+    document.querySelectorAll('.info-row').forEach(r => { r.style.flexDirection = 'row-reverse'; });
+    const urduBtn = document.getElementById('urduBtn');
+    if (urduBtn) {
+      urduBtn.classList.add('on');
+      urduBtn.style.color = '#fff';
+      urduBtn.style.background = '#1a6b3a';
+      urduBtn.style.border = '1px solid #1a6b3a';
+    }
+  }
 
   // ── spacing sliders ───────────────────────────────────────────────
   if (data.spacing) {
