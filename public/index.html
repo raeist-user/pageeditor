@@ -1128,39 +1128,102 @@ function drawRuler() {
 }
 
 // ═══════════════════════════════════════
-// SMART FORMAT
+// SMART FORMAT (Non-Destructive)
 // ═══════════════════════════════════════
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function transformAsterisks(mode) {
   const sel=window.getSelection();let hasSel=false,range=null,selArea=null;
   if(sel&&sel.rangeCount>0&&!sel.isCollapsed){const r=sel.getRangeAt(0);document.querySelectorAll('.columns-area').forEach(a=>{if(!selArea&&a.contains(r.commonAncestorContainer)){hasSel=true;range=r.cloneRange();selArea=a;}});}
-  function buildHtml(text){let n=1;return text.split('\n').map(line=>{const t=line.trim();if(t.startsWith('*')){const q=t.slice(1).trim();if(mode==='bold')return`<div><b>${escHtml(q)}</b></div>`;if(mode==='serial')return`<div>${n++}. ${escHtml(q)}</div>`;if(mode==='both')return`<div><b>${n++}. ${escHtml(q)}</b></div>`;return`<div>${escHtml(q)}</div>`;}return`<div>${escHtml(line)||'<br>'}</div>`;}).join('');}
-  if(hasSel){const text=sel.toString();if(!text.trim()){alert('No content found.');return;}if(mode!=='reset'&&!text.split('\n').some(l=>l.trim().startsWith('*'))){alert('No lines starting with * found.');return;}selArea.focus();sel.removeAllRanges();sel.addRange(range);document.execCommand('insertHTML',false,buildHtml(text));}
-  else{const allAreas=[...document.querySelectorAll('.columns-area')];const text=allAreas.map(a=>a.innerText).join('\n').replace(/\n{3,}/g,'\n\n');if(!text.trim()){alert('No content found.');return;}if(mode!=='reset'&&!text.split('\n').some(l=>l.trim().startsWith('*'))){alert('No lines starting with * found.');return;}document.querySelectorAll('.page-cont').forEach(p=>p.remove());document.getElementById('columnsArea').innerHTML=buildHtml(text);}
+  
+  let n = 1; let found = false;
+  function processNode(child) {
+    // Only process block elements, skip MathJax containers
+    if (child.nodeType === 1 && !child.classList?.contains('mjx-container')) { 
+      let t = child.textContent.trim();
+      if (t.startsWith('*')) {
+        found = true;
+        // Safely replace ONLY the very first asterisk, preserving MathJax & HTML
+        let inner = child.innerHTML.replace('*', '').trim();
+        if (mode === 'bold') child.innerHTML = `<b>* ${inner}</b>`;
+        else if (mode === 'serial') child.innerHTML = `${n++}. ${inner}`;
+        else if (mode === 'both') child.innerHTML = `<b>${n++}. ${inner}</b>`;
+      }
+    } else if (child.nodeType === 3) { // Raw text nodes
+      let t = child.textContent.trim();
+      if (t.startsWith('*')) {
+        found = true;
+        let txt = escHtml(t.substring(1).trim());
+        let wrapper = document.createElement('div');
+        if (mode === 'bold') wrapper.innerHTML = `<b>* ${txt}</b>`;
+        else if (mode === 'serial') wrapper.innerHTML = `${n++}. ${txt}`;
+        else if (mode === 'both') wrapper.innerHTML = `<b>${n++}. ${txt}</b>`;
+        child.replaceWith(wrapper);
+      }
+    }
+  }
+
+  if(hasSel){
+    [...selArea.childNodes].forEach(child => { if (range.intersectsNode(child)) processNode(child); });
+  } else {
+    document.querySelectorAll('.columns-area').forEach(a => [...a.childNodes].forEach(processNode));
+  }
+  
+  if(!found){alert('No lines starting with * found.');return;}
   updateCounts();setTimeout(reflowPages,200);
 }
 
 function transformNumbers(mode) {
   const sel=window.getSelection();let hasSel=false,range=null,selArea=null;
   if(sel&&sel.rangeCount>0&&!sel.isCollapsed){const r=sel.getRangeAt(0);document.querySelectorAll('.columns-area').forEach(a=>{if(!selArea&&a.contains(r.commonAncestorContainer)){hasSel=true;range=r.cloneRange();selArea=a;}});}
-  const numRegex=/^(\d+[\.\)]\s*)(.*)$/;
-  function buildHtml(text){return text.split('\n').map(line=>{const t=line.trim();const m=t.match(numRegex);if(m){const prefix=escHtml(m[1]);const rest=escHtml(m[2]);return`<div><b>${prefix}${rest}</b></div>`;}return`<div>${escHtml(line)||'<br>'}</div>`;}).join('');}
-  if(hasSel){const text=sel.toString();if(!text.trim()){alert('No content found.');return;}if(!text.split('\n').some(l=>numRegex.test(l.trim()))){alert('No numbered lines (e.g. 1. Question) found in selection.');return;}selArea.focus();sel.removeAllRanges();sel.addRange(range);document.execCommand('insertHTML',false,buildHtml(text));}
-  else{const allAreas=[...document.querySelectorAll('.columns-area')];const text=allAreas.map(a=>a.innerText).join('\n').replace(/\n{3,}/g,'\n\n');if(!text.trim()){alert('No content found.');return;}if(!text.split('\n').some(l=>numRegex.test(l.trim()))){alert('No numbered lines (e.g. 1. Question) found.');return;}document.querySelectorAll('.page-cont').forEach(p=>p.remove());document.getElementById('columnsArea').innerHTML=buildHtml(text);}
+  
+  let found = false; const numRegex = /^(\d+[\.\)]\s*)(.*)$/;
+  function processNode(child) {
+    if (child.nodeType === 1 && !child.classList?.contains('mjx-container')) {
+      let t = child.textContent.trim();
+      if (numRegex.test(t)) {
+        found = true;
+        if (mode === 'bold') child.innerHTML = `<b>${child.innerHTML}</b>`;
+      }
+    } else if (child.nodeType === 3) {
+      let t = child.textContent.trim();
+      if (numRegex.test(t)) {
+        found = true;
+        let wrapper = document.createElement('div');
+        if (mode === 'bold') wrapper.innerHTML = `<b>${escHtml(t)}</b>`;
+        else wrapper.innerHTML = escHtml(t);
+        child.replaceWith(wrapper);
+      }
+    }
+  }
+
+  if(hasSel){
+    [...selArea.childNodes].forEach(child => { if (range.intersectsNode(child)) processNode(child); });
+  } else {
+    document.querySelectorAll('.columns-area').forEach(a => [...a.childNodes].forEach(processNode));
+  }
+  
+  if(!found){alert('No numbered lines (e.g. 1. Question) found.');return;}
   updateCounts();setTimeout(reflowPages,200);
 }
 
 function removeEmptyLines() {
-  const allAreas=[...document.querySelectorAll('.columns-area')];
-  const text=allAreas.map(a=>a.innerText).join('\n');if(!text.trim()){alert('No content found.');return;}
-  const cleaned=text.split('\n').filter(line=>line.trim()!=='').join('\n');
-  const html=cleaned.split('\n').map(line=>`<div>${escHtml(line)}</div>`).join('');
-  document.querySelectorAll('.page-cont').forEach(p=>p.remove());
-  document.getElementById('columnsArea').innerHTML=html;
-  updateCounts();setTimeout(reflowPages,200);
-}
-
+  let found = false;
+  document.querySelectorAll('.columns-area').forEach(a => {
+    [...a.childNodes].forEach(child => {
+      if (child.nodeType === 1) {
+        // Ensure we don't delete elements that contain images or MathJax
+        if (child.textContent.trim() === '' && !child.querySelector('img') && !child.querySelector('mjx-container') && !child.querySelector('svg')) {
+          child.remove(); found = true;
+        }
+      } else if (child.nodeType === 3) {
+        if (child.textContent.trim() === '') { child.remove(); }
+      }
+    });
+  });
+  if(found) { updateCounts(); setTimeout(reflowPages, 200); }
+  }
+  
 // ═══════════════════════════════════════
 // PDF EXPORT
 // ═══════════════════════════════════════
