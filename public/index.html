@@ -1003,13 +1003,29 @@ function renderAllLatex() {
 
   function latexToHtml(tex) {
     tex=tex.replace(/%[^\n]*/g,'');
+
+    // --- NEW: Fix BiDi layout and spacing for MCQ options ---
+    tex = tex.replace(/\(A\)(.*?)\(B\)(.*?)\(C\)(.*?)\(D\)(.*)/g, (_, a, b, c, d) => {
+      const cln = s => s.replace(/\\quad\b/g, '').replace(/~/g, ' ').trim();
+      return `<div style="display:flex; gap:32px; flex-wrap:wrap; margin-top:4px; margin-bottom:8px;">` +
+             `<div>&rlm;(A) ${cln(a)}&rlm;</div>` +
+             `<div>&rlm;(B) ${cln(b)}&rlm;</div>` +
+             `<div>&rlm;(C) ${cln(c)}&rlm;</div>` +
+             `<div>&rlm;(D) ${cln(d)}&rlm;</div>` +
+             `</div>`;
+    });
+    // --------------------------------------------------------
+
     tex=tex.replace(/\\\\(\s*\[[\d.]+[a-z]*\])?/g,'<br>');
     tex=tex.replace(/\\newline\b/g,'<br>');
     tex=tex.replace(/\\hline\b/g,'<hr style="border-top:1px solid #888;margin:3px 0;">');
     tex=tex.replace(/\\vspace\*?\{[^}]*\}/g,'');tex=tex.replace(/\\hspace\*?\{[^}]*\}/g,'&nbsp;');
     tex=tex.replace(/\\noindent\b/g,'');tex=tex.replace(/\\medskip\b/g,'<div style="height:6px"></div>');
     tex=tex.replace(/\\bigskip\b/g,'<div style="height:10px"></div>');tex=tex.replace(/\\smallskip\b/g,'<div style="height:3px"></div>');
-    tex=tex.replace(/\\quad\b/g,'&nbsp;&nbsp;&nbsp;&nbsp;');tex=tex.replace(/\\qquad\b/g,'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
+
+    // --- NEW: Add RLM markers to spacing to prevent number scrambling ---
+    tex=tex.replace(/\\quad\b/g,'&rlm;&nbsp;&nbsp;&nbsp;&nbsp;&rlm;');
+    tex=tex.replace(/\\qquad\b/g,'&rlm;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rlm;');
     tex=tex.replace(/~~/g,'&nbsp;&nbsp;');tex=tex.replace(/~/g,'&nbsp;');
     function cmd1(tag){return(_,inner)=>`<${tag}>${inner}</${tag}>`;}
     for(let i=0;i<4;i++){
@@ -1138,18 +1154,17 @@ function transformAsterisks(mode) {
   
   let n = 1; let found = false;
   function processNode(child) {
-    // Only process block elements, skip MathJax containers
+    // Skip MathJax containers to prevent wiping out equations
     if (child.nodeType === 1 && !child.classList?.contains('mjx-container')) { 
       let t = child.textContent.trim();
       if (t.startsWith('*')) {
         found = true;
-        // Safely replace ONLY the very first asterisk, preserving MathJax & HTML
         let inner = child.innerHTML.replace('*', '').trim();
         if (mode === 'bold') child.innerHTML = `<b>* ${inner}</b>`;
         else if (mode === 'serial') child.innerHTML = `${n++}. ${inner}`;
         else if (mode === 'both') child.innerHTML = `<b>${n++}. ${inner}</b>`;
       }
-    } else if (child.nodeType === 3) { // Raw text nodes
+    } else if (child.nodeType === 3) {
       let t = child.textContent.trim();
       if (t.startsWith('*')) {
         found = true;
@@ -1212,7 +1227,6 @@ function removeEmptyLines() {
   document.querySelectorAll('.columns-area').forEach(a => {
     [...a.childNodes].forEach(child => {
       if (child.nodeType === 1) {
-        // Ensure we don't delete elements that contain images or MathJax
         if (child.textContent.trim() === '' && !child.querySelector('img') && !child.querySelector('mjx-container') && !child.querySelector('svg')) {
           child.remove(); found = true;
         }
@@ -1222,7 +1236,7 @@ function removeEmptyLines() {
     });
   });
   if(found) { updateCounts(); setTimeout(reflowPages, 200); }
-  }
+}
   
 // ═══════════════════════════════════════
 // PDF EXPORT
