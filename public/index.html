@@ -126,7 +126,7 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
 .zoom-wrapper{position:absolute;top:0;left:0;display:flex;flex-direction:column;align-items:center;padding:24px 40px 48px;gap:0;transform-origin:top left;will-change:transform;}
 
 /* ── PAGE ── */
-.page{width:210mm;height:297mm;background:var(--page);box-shadow:var(--shadow);padding:0.1in;position:relative;font-family:'EB Garamond',Georgia,serif;font-size:11pt;line-height:1.5;color:#111;overflow:hidden;flex-shrink:0;}
+.page{width:210mm;height:297mm;background:var(--page);box-shadow:var(--shadow);padding:0;position:relative;font-family:'EB Garamond',Georgia,serif;font-size:11pt;line-height:1.5;color:#111;overflow:hidden;flex-shrink:0;}
 
 /* Page header */
 .page-header{text-align:center;margin-bottom:4px;}
@@ -338,10 +338,10 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
         <button class="mp-preset" onclick="setPresetMargin('narrow')">Narrow</button>
         <button class="mp-preset" onclick="setPresetMargin('wide')">Wide</button>
       </div>
-      <div class="mp-row"><label>Top</label><input type="range" id="mTop" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mTop','mTopV')"><span class="mp-val" id="mTopV">0.1″</span></div>
-      <div class="mp-row"><label>Bottom</label><input type="range" id="mBot" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mBot','mBotV')"><span class="mp-val" id="mBotV">0.1″</span></div>
-      <div class="mp-row"><label>Left</label><input type="range" id="mLeft" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mLeft','mLeftV')"><span class="mp-val" id="mLeftV">0.1″</span></div>
-      <div class="mp-row"><label>Right</label><input type="range" id="mRight" min="0.1" max="3" step="0.05" value="0.1" oninput="updateMarginLabel('mRight','mRightV')"><span class="mp-val" id="mRightV">0.1″</span></div>
+      <div class="mp-row"><label>Top</label><input type="range" id="mTop" min="0" max="3" step="0.05" value="0" oninput="updateMarginLabel('mTop','mTopV')"><span class="mp-val" id="mTopV">0″</span></div>
+      <div class="mp-row"><label>Bottom</label><input type="range" id="mBot" min="0" max="3" step="0.05" value="0" oninput="updateMarginLabel('mBot','mBotV')"><span class="mp-val" id="mBotV">0″</span></div>
+      <div class="mp-row"><label>Left</label><input type="range" id="mLeft" min="0" max="3" step="0.05" value="0" oninput="updateMarginLabel('mLeft','mLeftV')"><span class="mp-val" id="mLeftV">0″</span></div>
+      <div class="mp-row"><label>Right</label><input type="range" id="mRight" min="0" max="3" step="0.05" value="0" oninput="updateMarginLabel('mRight','mRightV')"><span class="mp-val" id="mRightV">0″</span></div>
       <button class="mp-apply" onclick="applyMargins()">Apply Margins</button>
     </div>
   </div>
@@ -1123,8 +1123,8 @@ function drawRuler() {
   const pageWpx = 793.7 * currentZoom;
 
   // Mirror-margin aware offset: on even pages, left/right are swapped
-  const lVal = parseFloat(document.getElementById('mLeft')?.value || 0.1);
-  const rVal = parseFloat(document.getElementById('mRight')?.value || 0.1);
+  const lVal = parseFloat(document.getElementById('mLeft')?.value || 0);
+  const rVal = parseFloat(document.getElementById('mRight')?.value || 0);
   const isEvenPage = mirrorMargins && (_currentPage % 2 === 0);
   const effectiveLeft = isEvenPage ? rVal : lVal;
   const leftPx = effectiveLeft * 96 * currentZoom;
@@ -1268,10 +1268,10 @@ async function savePDF() {
     const aLH=area0?.style.lineHeight||'1.65';
     const isUrdu=(area0?.classList.contains('urdu-mode')||urduMode)||false;
     const aDir=isUrdu?'rtl':'ltr';
-    const t=parseFloat(document.getElementById('mTop')?.value||0.1);
-    const b=parseFloat(document.getElementById('mBot')?.value||0.1);
-    const l=parseFloat(document.getElementById('mLeft')?.value||0.1);
-    const r=parseFloat(document.getElementById('mRight')?.value||0.1);
+    const t=parseFloat(document.getElementById('mTop')?.value||0);
+    const b=parseFloat(document.getElementById('mBot')?.value||0);
+    const l=parseFloat(document.getElementById('mLeft')?.value||0);
+    const r=parseFloat(document.getElementById('mRight')?.value||0);
 
     let embeddedFontCSS='';
     const fontFaceStyle=document.getElementById('fontFaceStyle')?.textContent||'';
@@ -1482,10 +1482,10 @@ async function saveDocx() {
   }
 
   // ── read margins ─────────────────────────────────────────────────────
-  const mL = toTwip(document.getElementById('mLeft')?.value  || 0.5);
-  const mR = toTwip(document.getElementById('mRight')?.value || 0.5);
-  const mT = toTwip(document.getElementById('mTop')?.value   || 0.5);
-  const mB = toTwip(document.getElementById('mBot')?.value   || 0.5);
+  const mL = toTwip(document.getElementById('mLeft')?.value  || 0);
+  const mR = toTwip(document.getElementById('mRight')?.value || 0);
+  const mT = toTwip(document.getElementById('mTop')?.value   || 0);
+  const mB = toTwip(document.getElementById('mBot')?.value   || 0);
 
   // ── column spec (3 cols, equal width, ~0.5 cm gap) ───────────────────
   const colSpec = {
@@ -1635,10 +1635,10 @@ function toggleMirrorMargins() {
 }
 
 function applyPageMarginTo(p, idx) {
-  const t = parseFloat(document.getElementById('mTop')?.value  || 0.1);
-  const b = parseFloat(document.getElementById('mBot')?.value  || 0.1);
-  const l = parseFloat(document.getElementById('mLeft')?.value || 0.1);
-  const r = parseFloat(document.getElementById('mRight')?.value || 0.1);
+  const t = parseFloat(document.getElementById('mTop')?.value  || 0);
+  const b = parseFloat(document.getElementById('mBot')?.value  || 0);
+  const l = parseFloat(document.getElementById('mLeft')?.value || 0);
+  const r = parseFloat(document.getElementById('mRight')?.value || 0);
   const isEven = mirrorMargins && (idx % 2 === 1);
   p.style.padding = isEven
     ? `${t}in ${l}in ${b}in ${r}in`   // even: swap — inner gutter on left (towards spine)
