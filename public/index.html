@@ -384,6 +384,7 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
       <div class="mp-row"><label>Letter</label><input type="range" id="letterSpaceSlider" min="-2" max="10" step="0.1" value="0" oninput="applyLetterSpacing(this.value);document.getElementById('letterSpaceVal').textContent=parseFloat(this.value).toFixed(1)+'px'"><span class="mp-val" id="letterSpaceVal">0px</span></div>
       <div class="mp-row"><label>Word</label><input type="range" id="wordSpaceSlider" min="-2" max="20" step="0.5" value="0" oninput="applyWordSpacing(this.value);document.getElementById('wordSpaceVal').textContent=parseFloat(this.value).toFixed(1)+'px'"><span class="mp-val" id="wordSpaceVal">0px</span></div>
       <div class="mp-row"><label>Indent</label><input type="range" id="indentSlider" min="0" max="40" step="1" value="0" oninput="applyIndent(this.value);document.getElementById('indentVal').textContent=this.value+'px'"><span class="mp-val" id="indentVal">0px</span></div>
+      <div class="mp-row"><label>Options</label><input type="range" id="mcqGapSlider" min="0" max="32" step="1" value="8" oninput="applyMcqGap(this.value);document.getElementById('mcqGapVal').textContent=this.value+'px'"><span class="mp-val" id="mcqGapVal">8px</span></div>
       <button class="mp-apply" onclick="resetSpacing()">Reset All</button>
     </div>
   </div>
@@ -1007,7 +1008,7 @@ function renderAllLatex() {
     // --- NEW: Fix BiDi layout and spacing for MCQ options ---
     tex = tex.replace(/\(A\)(.*?)\(B\)(.*?)\(C\)(.*?)\(D\)(.*)/g, (_, a, b, c, d) => {
       const cln = s => s.replace(/\\quad\b/g, '').replace(/~/g, ' ').trim();
-      return `<div style="display:flex; gap:32px; flex-wrap:wrap; margin-top:4px; margin-bottom:8px;">` +
+      return `<div class="mcq-options" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; margin-bottom:8px;">` +
              `<div>&rlm;(A) ${cln(a)}&rlm;</div>` +
              `<div>&rlm;(B) ${cln(b)}&rlm;</div>` +
              `<div>&rlm;(C) ${cln(c)}&rlm;</div>` +
@@ -1707,11 +1708,12 @@ function applyParaSpace(val){let style=document.getElementById('paraSpaceStyle')
 function applyLetterSpacing(val){document.querySelectorAll('.columns-area').forEach(a=>{a.style.letterSpacing=val+'px';});setTimeout(reflowPages,200);}
 function applyWordSpacing(val){document.querySelectorAll('.columns-area').forEach(a=>{a.style.wordSpacing=val+'px';});setTimeout(reflowPages,200);}
 function applyIndent(val){let style=document.getElementById('indentStyle');if(!style){style=document.createElement('style');style.id='indentStyle';document.head.appendChild(style);}style.textContent=`.columns-area div,.columns-area p{text-indent:${val}px;}`;setTimeout(reflowPages,200);}
+function applyMcqGap(val){let style=document.getElementById('mcqGapStyle');if(!style){style=document.createElement('style');style.id='mcqGapStyle';document.head.appendChild(style);}style.textContent=`.mcq-options{gap:${val}px;}`;setTimeout(reflowPages,200);}
 function resetSpacing(){
-  document.getElementById('lineHeightSlider').value=1.65;document.getElementById('paraSpaceSlider').value=0;document.getElementById('letterSpaceSlider').value=0;document.getElementById('wordSpaceSlider').value=0;document.getElementById('indentSlider').value=0;
-  document.getElementById('lineHeightVal').textContent='1.65';document.getElementById('paraSpaceVal').textContent='0px';document.getElementById('letterSpaceVal').textContent='0px';document.getElementById('wordSpaceVal').textContent='0px';document.getElementById('indentVal').textContent='0px';
+  document.getElementById('lineHeightSlider').value=1.65;document.getElementById('paraSpaceSlider').value=0;document.getElementById('letterSpaceSlider').value=0;document.getElementById('wordSpaceSlider').value=0;document.getElementById('indentSlider').value=0;document.getElementById('mcqGapSlider').value=8;
+  document.getElementById('lineHeightVal').textContent='1.65';document.getElementById('paraSpaceVal').textContent='0px';document.getElementById('letterSpaceVal').textContent='0px';document.getElementById('wordSpaceVal').textContent='0px';document.getElementById('indentVal').textContent='0px';document.getElementById('mcqGapVal').textContent='8px';
   document.querySelectorAll('.columns-area').forEach(a=>{a.style.lineHeight='1.65';a.style.letterSpacing='';a.style.wordSpacing='';});
-  ['paraSpaceStyle','indentStyle'].forEach(id=>{const s=document.getElementById(id);if(s)s.textContent='';});
+  ['paraSpaceStyle','indentStyle','mcqGapStyle'].forEach(id=>{const s=document.getElementById(id);if(s)s.textContent='';});
   setTimeout(reflowPages,200);
 }
 
