@@ -237,6 +237,7 @@ html,body{height:100%;font-family:'Nunito Sans',sans-serif;background:var(--bg);
   .editor-scroll{overflow:visible!important;background:none;}
   .zoom-outer,.zoom-wrapper{position:static!important;transform:none!important;width:auto!important;height:auto!important;padding:0!important;gap:0!important;}
   .page{box-shadow:none!important;overflow:visible!important;page-break-after:always;break-after:page;height:297mm!important;width:210mm!important;margin:0!important;}
+  .page:last-child{height:auto!important;page-break-after:avoid!important;break-after:avoid!important;}
   /* column-fill:balance so columns spread evenly; height:auto lets content breathe */
   .columns-area{overflow:visible!important;height:auto!important;column-fill:balance!important;}
   /* Urdu RTL in print: force right-align and collapse inflated min-height */
@@ -1358,11 +1359,15 @@ async function savePDF() {
       const iframePages=[...iframe.contentDocument.querySelectorAll('.page')];
       for(let i=0;i<iframePages.length;i++){
         const pg=iframePages[i];
+        const isLast = i === iframePages.length - 1;
+        // For the last page, use actual content height to avoid blank bottom space
+        const pgH = isLast ? Math.min(pg.scrollHeight || 1123, 1123) : 1123;
+        const mmH = isLast ? Math.round((pgH / 1123) * 297) : 297;
         iframe.contentWindow.scrollTo(0,pg.offsetTop);
         await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-        const canvas=await html2canvas(pg,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',logging:false,width:794,height:1123,x:0,y:0,scrollX:0,scrollY:-pg.offsetTop,windowWidth:794,windowHeight:1123});
-        if(i>0)pdf.addPage('a4','portrait');
-        pdf.addImage(canvas.toDataURL('image/jpeg',0.97),'JPEG',0,0,210,297);
+        const canvas=await html2canvas(pg,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',logging:false,width:794,height:pgH,x:0,y:0,scrollX:0,scrollY:-pg.offsetTop,windowWidth:794,windowHeight:1123});
+        if(i>0)pdf.addPage([210, mmH],'portrait');
+        pdf.addImage(canvas.toDataURL('image/jpeg',0.97),'JPEG',0,0,210,mmH);
       }
     } finally { document.body.removeChild(iframe); }
     const pdfBlob=pdf.output('blob');
